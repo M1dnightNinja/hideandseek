@@ -1,6 +1,7 @@
 package me.m1dnightninja.hideandseek.api.integration;
 
 import me.m1dnightninja.midnightcore.api.module.skin.Skin;
+import me.m1dnightninja.skinsetter.api.SavedSkin;
 import me.m1dnightninja.skinsetter.api.SkinSetterAPI;
 
 public class SkinSetterIntegration {
@@ -10,7 +11,8 @@ public class SkinSetterIntegration {
         SkinSetterAPI api = SkinSetterAPI.getInstance();
         if(api == null) return null;
 
-        return api.getSkinRegistry().getSkin(id);
+        SavedSkin skin = api.getSkinRegistry().getSkin(id);
+        return skin == null ? null : skin.getSkin();
     }
 
 }
