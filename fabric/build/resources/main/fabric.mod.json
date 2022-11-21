@@ -1,0 +1,28 @@
+{
+    "schemaVersion": 1,
+    "id": "hideandseek",
+    "version": "1.0-SNAPSHOT",
+    "environment": "*",
+    "entrypoints": {
+        "midnightcore": [
+            "org.wallentines.hideandseek.fabric.HideAndSeek"
+        ]
+    },
+    "mixins": [ ],
+    "depends": {
+        "fabricloader": ">=0.14.9",
+        "minecraft": ">=1.19.2"
+    },
+    "name": "Hide and Seek",
+    "description": "A mod which allows you to play Hide and Seek with your friends",
+    "contact": {
+        "homepage": "https://wallentines.org/"
+    },
+    "authors": [
+        {
+            "name": "M1dnight_Ninja"
+        }
+    ],
+    "license": "LGPL",
+    "icon": "hideandseek/icon.png"
+}
