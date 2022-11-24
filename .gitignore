@@ -3,3 +3,5 @@
 .vscode
 run
 fabric/run
+build
+bin

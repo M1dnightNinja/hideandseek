@@ -7,6 +7,8 @@ import org.wallentines.hideandseek.api.game.timer.GameTimer;
 import org.wallentines.hideandseek.api.game.map.PlayerClass;
 import org.wallentines.hideandseek.common.game.timer.AbstractTimer;
 import org.wallentines.hideandseek.common.core.ContentRegistryImpl;
+import org.wallentines.midnightcore.api.MidnightCoreAPI;
+import org.wallentines.midnightcore.api.module.session.SessionModule;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.LangProvider;
 import org.wallentines.midnightcore.api.text.MComponent;
@@ -115,11 +117,23 @@ public class HideAndSeekImpl extends HideAndSeekAPI {
         return serverPack.get();
     }
 
+
+    private void shutdown() {
+
+        SessionModule mod = MidnightCoreAPI.getModule(SessionModule.class);
+
+        if(mod != null) {
+            mod.shutdownAll(sess -> sess.getNamespace().equals(Constants.DEFAULT_NAMESPACE));
+        }
+
+    }
+
     @Override
     public void reload() {
 
+        shutdown();
+
         ContentRegistryImpl reg = ContentRegistryImpl.INSTANCE;
-        getSessionManager().getModule().shutdownAll();
 
         reg.clearPermissions();
         reg.clearClasses();

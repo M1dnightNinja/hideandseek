@@ -16,13 +16,8 @@ import org.wallentines.hideandseek.fabric.command.MainCommand;
 import org.wallentines.hideandseek.fabric.core.FabricSessionManager;
 import org.wallentines.hideandseek.fabric.game.FabricTimer;
 import org.wallentines.hideandseek.fabric.listener.GameListener;
-import org.wallentines.midnightcore.api.MidnightCoreAPI;
 import org.wallentines.midnightcore.api.item.MItemStack;
-import org.wallentines.midnightcore.api.module.savepoint.SavepointModule;
-import org.wallentines.midnightcore.api.module.session.SessionModule;
-import org.wallentines.midnightcore.api.module.vanish.VanishModule;
 import org.wallentines.midnightcore.api.player.MPlayer;
-import org.wallentines.midnightcore.fabric.event.MidnightCoreAPICreatedEvent;
 import org.wallentines.midnightcore.fabric.event.server.CommandLoadEvent;
 import org.wallentines.midnightcore.fabric.event.server.ServerStartEvent;
 import org.wallentines.midnightcore.fabric.item.FabricItem;
@@ -31,12 +26,10 @@ import org.wallentines.midnightcore.fabric.util.ConversionUtil;
 import org.wallentines.midnightlib.config.ConfigSection;
 import org.wallentines.midnightlib.config.serialization.json.JsonConfigProvider;
 import org.wallentines.midnightlib.event.Event;
-import org.wallentines.midnightlib.module.Module;
 import org.wallentines.midnightlib.registry.Identifier;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 
 public class HideAndSeek implements ModInitializer {
 
@@ -52,10 +45,7 @@ public class HideAndSeek implements ModInitializer {
         // Create the API
         api = new HideAndSeekImpl(dataFolder, new FabricSessionManager(), FabricTimer::new, this::getServerPack, this::applyClass);
 
-
-        Event.register(MidnightCoreAPICreatedEvent.class, this, this::onAPICreated);
         Event.register(CommandLoadEvent.class, this, this::onCommandLoad);
-
         Event.register(ServerStartEvent.class, this, ev -> {
 
             if(ev.getServer().getServerResourcePack().isPresent()) {
@@ -65,6 +55,9 @@ public class HideAndSeek implements ModInitializer {
             }
         });
 
+        ConfigSection langDefaults = JsonConfigProvider.INSTANCE.loadFromStream(getClass().getResourceAsStream("/hideandseek/lang/en_us.json"));
+        api.loadContents(langDefaults);
+
         GameListener.register();
     }
 
@@ -72,18 +65,6 @@ public class HideAndSeek implements ModInitializer {
         return pack;
     }
 
-    private void onAPICreated(MidnightCoreAPICreatedEvent event) {
-
-        for(Class<? extends Module<MidnightCoreAPI>> clazz : Arrays.asList(SavepointModule.class, SessionModule.class, VanishModule.class)) {
-            if(event.getAPI().getModuleManager().getModule(clazz) == null) {
-                throw new IllegalStateException("Unable to load HideAndSeek! One or more required MidnightCore modules is not loaded! [" + clazz + "]");
-            }
-        }
-
-        ConfigSection langDefaults = JsonConfigProvider.INSTANCE.loadFromStream(getClass().getResourceAsStream("/hideandseek/lang/en_us.json"));
-        api.loadContents(langDefaults);
-
-    }
 
     private void onCommandLoad(CommandLoadEvent event) {
 

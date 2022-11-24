@@ -51,7 +51,7 @@ public class LobbySessionImpl extends AbstractSession implements LobbySession {
         currentSession = HideAndSeekAPI.getInstance().getSessionManager().createGameSession(this, lobby.getGameType());
         if(currentSession == null) shutdown();
 
-        currentSession.addShutdownCallback(() -> {
+        currentSession.shutdownEvent().register(this, ev -> {
             getPlayers().forEach(player -> {
                 player.teleport(lobby.getLocation());
 
@@ -87,7 +87,7 @@ public class LobbySessionImpl extends AbstractSession implements LobbySession {
     @Override
     protected void onAddPlayer(MPlayer player) {
 
-        Util.getModule(SavepointModule.class).resetPlayer(player);
+        getSavepointModule().resetPlayer(player);
         player.teleport(getLobby().getLocation());
 
         if(lobby.getScoreboardTemplate() != null) getPlayerScoreboard(player).addViewer(player);

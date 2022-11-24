@@ -118,7 +118,7 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
         try {
             type.setupPlayers(this, seeker);
 
-            SavepointModule spm = MidnightCoreAPI.getInstance().getModuleManager().getModule(SavepointModule.class);
+            SavepointModule spm = getSavepointModule();
 
             // Platform implementation-specific codee
             onStart();
@@ -167,7 +167,7 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
             });
             currentMap.getGameData().getHideTimerOverrides().forEach(currentTimer::addOverride);
 
-            VanishModule mod = MidnightCoreAPI.getInstance().getModuleManager().getModule(VanishModule.class);
+            VanishModule mod = MidnightCoreAPI.getModule(VanishModule.class);
             Collection<MPlayer> seekers = getPlayers(pl -> !currentMap.getGameData().getRoleData(getRole(pl)).shouldHideName());
 
             for (MPlayer pl : getPlayers()) {
@@ -182,7 +182,7 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
                 RoleData r = currentMap.getGameData().getRoleData(roles.get(pl));
                 if (r.shouldHideName()) {
                     for (MPlayer sk : seekers) {
-                        mod.vanishPlayerFor(pl, sk);
+                        if (mod != null) mod.vanishPlayerFor(pl, sk);
                     }
                 }
 
@@ -191,8 +191,12 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
             currentTimer.run();
 
             type.onStartHiding(this);
-            for (String s : currentMap.getGameData().getStartCommands()) {
-                MidnightCoreAPI.getInstance().executeConsoleCommand(s.replace("%world_id%", getWorldId().toString()), false);
+
+            MidnightCoreAPI api = MidnightCoreAPI.getInstance();
+            if (api != null) {
+                for (String s : currentMap.getGameData().getStartCommands()) {
+                    api.executeConsoleCommand(s.replace("%world_id%", getWorldId().toString()), false);
+                }
             }
 
         } catch (Throwable th) {
@@ -219,7 +223,7 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
         });
         currentMap.getGameData().getSeekTimerOverrides().forEach(currentTimer::addOverride);
 
-        VanishModule mod = MidnightCoreAPI.getInstance().getModuleManager().getModule(VanishModule.class);
+        VanishModule mod = MidnightCoreAPI.getModule(VanishModule.class);
         Collection<MPlayer> seekers = getPlayers(pl -> !currentMap.getGameData().getRoleData(getRole(pl)).shouldHideName());
         for(MPlayer pl : getPlayers()) {
             currentTimer.addViewer(pl);
@@ -227,7 +231,7 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
             RoleData r = currentMap.getGameData().getRoleData(roles.get(pl));
             if(r.shouldHideName()) {
                 for(MPlayer sk : seekers) {
-                    mod.revealPlayerFor(pl, sk);
+                    if(mod != null) mod.revealPlayerFor(pl, sk);
                 }
             }
         }
@@ -394,7 +398,7 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
             newClass = clazz.getEquivalent(currentMap, r);
         }
 
-        MidnightCoreAPI.getInstance().getModuleManager().getModule(SavepointModule.class).resetPlayer(player);
+        getSavepointModule().resetPlayer(player);
         if(newClass == null) newClass = currentMap.getOrGlobal(currentMap.getGameData().getRoleData(r).getRandomClass());
         if(newClass != null) {
             classes.put(player, newClass);
@@ -404,11 +408,13 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
         for(MPlayer pl : getPlayers()) updateScoreboard(pl);
 
         if(state == GameState.HIDING) {
-            VanishModule mod = MidnightCoreAPI.getInstance().getModuleManager().getModule(VanishModule.class);
+            VanishModule mod = MidnightCoreAPI.getModule(VanishModule.class);
 
-            Collection<MPlayer> hiders = getPlayers(pl -> currentMap.getGameData().getRoleData(getRole(pl)).shouldHideName());
-            for(MPlayer h : hiders) {
-                mod.vanishPlayerFor(h, player);
+            if(mod != null) {
+                Collection<MPlayer> hiders = getPlayers(pl -> currentMap.getGameData().getRoleData(getRole(pl)).shouldHideName());
+                for (MPlayer h : hiders) {
+                    mod.vanishPlayerFor(h, player);
+                }
             }
         }
     }
@@ -423,10 +429,12 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
             RoleData rd = currentMap.getGameData().getRoleData(roles.get(player));
 
             if(!rd.shouldHideName()) {
-                VanishModule mod = MidnightCoreAPI.getInstance().getModuleManager().getModule(VanishModule.class);
-                Collection<MPlayer> hiders = getPlayers(pl -> currentMap.getGameData().getRoleData(getRole(pl)).shouldHideName());
-                for (MPlayer h : hiders) {
-                    mod.revealPlayerFor(h, player);
+                VanishModule mod = MidnightCoreAPI.getModule(VanishModule.class);
+                if(mod != null) {
+                    Collection<MPlayer> hiders = getPlayers(pl -> currentMap.getGameData().getRoleData(getRole(pl)).shouldHideName());
+                    for (MPlayer h : hiders) {
+                        mod.revealPlayerFor(h, player);
+                    }
                 }
             }
         }
@@ -472,10 +480,16 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
         Object[] context = { provider, player, this, r, c, currentMap, lobbySession, lobby };
 
         CustomScoreboard sb = scoreboards.computeIfAbsent(player, k -> {
-            CustomScoreboard board = MidnightCoreAPI.getInstance().createScoreboard(CustomScoreboard.generateRandomId(), currentMap.getScoreboardTemplate().getTitle(context));
+
+            MidnightCoreAPI api = MidnightCoreAPI.getInstance();
+            if(api == null) {
+                throw new IllegalStateException("MidnightCoreAPI is null!"); // Should never happen.
+            }
+            CustomScoreboard board = api.createScoreboard(CustomScoreboard.generateRandomId(), currentMap.getScoreboardTemplate().getTitle(context));
             board.addViewer(player);
 
             return board;
+
         });
 
         currentMap.getScoreboardTemplate().fill(sb, context);

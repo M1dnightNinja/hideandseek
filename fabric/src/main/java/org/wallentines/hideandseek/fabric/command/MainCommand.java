@@ -193,6 +193,10 @@ public class MainCommand {
 
         LobbySession sess = manager.getLobbySession(lobby);
         if (sess == null) sess = manager.createLobbySession(lobby);
+        if (sess == null) {
+            CommandUtil.sendCommandFailure(context, HideAndSeekAPI.getInstance().getLangProvider(), "command.error.session_failed", false);
+            return 0;
+        }
 
         sess.addPlayer(mp);
 
@@ -262,6 +266,11 @@ public class MainCommand {
         } else {
             sess = HideAndSeekAPI.getInstance().getSessionManager().getViewingSession(map);
             if (sess == null) sess = HideAndSeekAPI.getInstance().getSessionManager().createViewingSession(map);
+        }
+
+        if(sess == null) {
+            CommandUtil.sendCommandFailure(context, HideAndSeekAPI.getInstance().getLangProvider(), "command.error.session_failed", false);
+            return 0;
         }
 
         CommandUtil.sendCommandSuccess(context, HideAndSeekAPI.getInstance().getLangProvider(), false, "command.map.loading");

@@ -13,7 +13,7 @@ import org.wallentines.hideandseek.common.integration.Requirements;
 import org.wallentines.midnightcore.api.text.MComponent;
 import org.wallentines.midnightcore.api.text.PlaceholderManager;
 import org.wallentines.midnightcore.api.text.PlaceholderSupplier;
-import org.wallentines.midnightcore.common.Registries;
+import org.wallentines.midnightcore.api.Registries;
 import org.wallentines.midnightlib.Version;
 import org.wallentines.midnightlib.config.ConfigRegistry;
 import org.wallentines.midnightlib.config.ConfigSection;

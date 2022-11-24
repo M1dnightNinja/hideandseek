@@ -32,6 +32,7 @@
   "command.error.map_exists": "&cA map with that ID already exists!",
   "command.error.map_creation_failed": "&cFailed to create map! Contact your server admin for support.",
   "command.error.not_editable": "&cThat property if this map is not editable!",
+  "command.error.session_failed": "&cFailed to create session!",
   "command.map.loading": "&7Loading map...",
   "command.map.created": "&aMap Created! Run &f/has map edit %id% &ato start editing it.",
   "command.map.settings.description": "&aMap description updated to &f%description%",

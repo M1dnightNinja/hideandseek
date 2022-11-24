@@ -2,6 +2,7 @@ package org.wallentines.hideandseek.common.integration;
 
 import org.wallentines.hideandseek.api.game.map.Map;
 import org.wallentines.midnightcore.api.MidnightCoreAPI;
+import org.wallentines.midnightcore.common.util.Util;
 import org.wallentines.midnightessentials.api.module.blockcommand.BlockCommandModule;
 import org.wallentines.midnightessentials.api.module.blockcommand.BlockCommandRegistry;
 import org.wallentines.midnightlib.config.ConfigSection;
@@ -20,7 +21,7 @@ public class MidnightEssentialsIntegration {
             FileConfig conf = FileConfig.findFile(dataFolder.listFiles(), "block_commands");
             if (conf == null) return;
 
-            BlockCommandModule mod = MidnightCoreAPI.getInstance().getModuleManager().getModule(BlockCommandModule.class);
+            BlockCommandModule mod = MidnightCoreAPI.getModule(BlockCommandModule.class);
             if (mod != null) {
 
                 BlockCommandRegistry reg = mod.createRegistry(activeWorld.toString());
@@ -36,7 +37,7 @@ public class MidnightEssentialsIntegration {
 
     public static void unloadBlockCommandsForWorld(Identifier activeWorld) {
 
-        BlockCommandModule mod = MidnightCoreAPI.getInstance().getModuleManager().getModule(BlockCommandModule.class);
+        BlockCommandModule mod = MidnightCoreAPI.getModule(BlockCommandModule.class);
         if(mod != null) {
 
             mod.unloadRegistry(activeWorld.toString());
@@ -47,7 +48,7 @@ public class MidnightEssentialsIntegration {
 
         File dataFolder = m.getDataFolder();
 
-        BlockCommandModule mod = MidnightCoreAPI.getInstance().getModuleManager().getModule(BlockCommandModule.class);
+        BlockCommandModule mod = MidnightCoreAPI.getModule(BlockCommandModule.class);
         if (mod == null) return;
 
         BlockCommandRegistry reg = mod.getRegistry(id.toString());
