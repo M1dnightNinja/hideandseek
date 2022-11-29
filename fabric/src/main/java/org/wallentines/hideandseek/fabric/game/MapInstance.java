@@ -20,14 +20,12 @@ import org.wallentines.hideandseek.api.game.map.Role;
 import org.wallentines.hideandseek.api.game.map.RoleData;
 import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.hideandseek.common.integration.IntegrationManager;
-import org.wallentines.hideandseek.common.integration.MidnightEssentialsIntegration;
-import org.wallentines.midnightcore.api.MidnightCoreAPI;
 import org.wallentines.midnightcore.api.module.session.Session;
 import org.wallentines.midnightcore.api.player.Location;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.common.module.session.AbstractSession;
 import org.wallentines.midnightcore.fabric.MidnightCore;
-import org.wallentines.midnightcore.fabric.module.dynamiclevel.*;
+import org.wallentines.midnightcore.fabric.level.*;
 import org.wallentines.midnightcore.fabric.player.FabricPlayer;
 import org.wallentines.midnightcore.fabric.util.ConversionUtil;
 import org.wallentines.midnightlib.math.Vec3d;
@@ -48,7 +46,6 @@ public class MapInstance {
     private final boolean shouldSave;
     private final boolean createTeams;
 
-    private final DynamicLevelModule module;
 
     private DynamicLevelContext context;
     private ServerLevel level;
@@ -58,11 +55,10 @@ public class MapInstance {
     private final HashMap<Role, Location> spawnLocations = new HashMap<>();
     private final HashMap<Role, PlayerTeam> teams = new HashMap<>();
 
-    public MapInstance(Map map, Session session, String identifier, DynamicLevelModule module, boolean createTeams, boolean save) {
+    public MapInstance(Map map, Session session, String identifier, boolean createTeams, boolean save) {
         this.identifier = identifier;
         this.session = session;
         this.map = map;
-        this.module = module;
         this.createTeams = createTeams;
         this.shouldSave = save;
 
@@ -80,13 +76,15 @@ public class MapInstance {
         ResourceKey<LevelStem> key = ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, ConversionUtil.toResourceLocation(map.getWorldData().getDimensionType()));
         ResourceLocation loc = new ResourceLocation(Constants.DEFAULT_NAMESPACE, map.getId() + "_" + identifier);
 
-        DynamicLevelStorage storage = LEVEL_STORAGE_CACHE.computeIfAbsent(map, k -> module.createLevelStorage(map.getDataFolder().toPath(), map.getDataFolder().toPath().resolve("backups")));
+        DynamicLevelStorage storage = LEVEL_STORAGE_CACHE.computeIfAbsent(map, k -> DynamicLevelStorage.create(map.getDataFolder().toPath(), map.getDataFolder().toPath().resolve("backups")));
         WorldConfig config = new WorldConfig(loc).noSave(!shouldSave).rootDimensionType(key).ignoreSessionLock(true).generator(EmptyGenerator.create(Biomes.FOREST));
 
         DynamicLevelContext ctx = storage.createWorldContext("world", config);
 
+        Identifier worldId = ConversionUtil.toIdentifier(loc);
+
         if(IntegrationManager.isMidnightEssentialsPresent()) {
-            MidnightEssentialsIntegration.loadBlockCommandsForWorld(map, ConversionUtil.toIdentifier(loc));
+            org.wallentines.hideandseek.common.integration.MidnightEssentialsIntegration.loadBlockCommandsForWorld(map, worldId);
         }
 
         ctx.loadDimension(config.getRootDimensionId(), new DynamicLevelCallback() {
@@ -105,6 +103,10 @@ public class MapInstance {
                 lvl.setWeatherParameters(0, Integer.MAX_VALUE, map.getWorldData().hasRain(), map.getWorldData().hasThunder());
                 if (map.getWorldData().hasRandomTime()) {
                     lvl.setDayTime(AbstractSession.RANDOM.nextLong(24000L));
+                }
+
+                if(IntegrationManager.playersWithMapPNG(session.getPlayers()) > 0) {
+                    org.wallentines.hideandseek.common.integration.MapPNGIntegration.loadMapsForWorld(map, worldId);
                 }
 
                 onComplete.run();
@@ -133,9 +135,9 @@ public class MapInstance {
             Identifier id = ConversionUtil.toIdentifier(context.getConfig().getRootDimensionId().location());
 
             if(shouldSave) {
-                MidnightEssentialsIntegration.saveBlockCommandsForWorld(map, id);
+                org.wallentines.hideandseek.common.integration.MidnightEssentialsIntegration.saveBlockCommandsForWorld(map, id);
             }
-            MidnightEssentialsIntegration.unloadBlockCommandsForWorld(id);
+            org.wallentines.hideandseek.common.integration.MidnightEssentialsIntegration.unloadBlockCommandsForWorld(id);
         }
     }
 
@@ -222,25 +224,17 @@ public class MapInstance {
     public static MapInstance forLobby(LobbySession lobby, Map map) {
 
         String id = lobby.getLobby().getId();
-        DynamicLevelModule mod = MidnightCoreAPI.getInstance().getModuleManager().getModule(DynamicLevelModule.class);
-
-        return new MapInstance(map, lobby, id, mod, true, false);
+        return new MapInstance(map, lobby, id, true, false);
     }
 
     public static MapInstance forEditor(Session session, Map map) {
 
-        String id = "editing";
-        DynamicLevelModule mod = MidnightCoreAPI.getInstance().getModuleManager().getModule(DynamicLevelModule.class);
-
-        return new MapInstance(map, session, id, mod, false, true);
+        return new MapInstance(map, session, "editing", false, true);
     }
 
     public static MapInstance forViewer(Session session, Map map) {
 
-        String id = "viewing";
-        DynamicLevelModule mod = MidnightCoreAPI.getInstance().getModuleManager().getModule(DynamicLevelModule.class);
-
-        return new MapInstance(map, session, id, mod, false, false);
+        return new MapInstance(map, session, "viewing", false, false);
     }
 
     public ServerLevel getLevel() {

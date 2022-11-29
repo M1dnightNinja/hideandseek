@@ -65,6 +65,9 @@ public class HideAndSeekImpl extends HideAndSeekAPI {
 
     public void loadContents(ConfigSection defaultLang) {
 
+        Path lang = dataFolder.toPath().resolve("lang");
+        FileUtil.tryCreateDirectory(lang);
+
         this.provider = new LangProvider(dataFolder.toPath().resolve("lang"), defaultLang);
         Constants.registerPlaceholders(PlaceholderManager.INSTANCE);
 
@@ -150,9 +153,9 @@ public class HideAndSeekImpl extends HideAndSeekAPI {
         reg.loadLobbies(lobbies.getRoot());
         reg.loadPermissions(config.getRoot().getSection("permissions"));
 
-        LOGGER.info("Registered " + reg.getGlobalClasses().size() + " classes");
-        LOGGER.info("Registered " + reg.getMaps().size() + " maps");
-        LOGGER.info("Registered " + reg.getLobbies().size() + " lobbies");
+        LOGGER.info("Registered " + reg.getGlobalClasses().getSize() + " classes");
+        LOGGER.info("Registered " + reg.getMaps().getSize() + " maps");
+        LOGGER.info("Registered " + reg.getLobbies().getSize() + " lobbies");
 
         provider.reload();
     }

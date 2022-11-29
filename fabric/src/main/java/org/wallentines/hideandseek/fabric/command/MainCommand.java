@@ -27,8 +27,8 @@ import org.wallentines.hideandseek.common.core.ContentRegistryImpl;
 import org.wallentines.hideandseek.common.game.BuiltinRoles;
 import org.wallentines.hideandseek.common.game.UIDisplayImpl;
 import org.wallentines.hideandseek.common.game.map.*;
+import org.wallentines.hideandseek.common.integration.IntegrationManager;
 import org.wallentines.hideandseek.common.integration.Requirements;
-import org.wallentines.hideandseek.common.util.GUIUtil;
 import org.wallentines.midnightcore.api.module.session.Session;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.CustomPlaceholder;
@@ -178,14 +178,19 @@ public class MainCommand {
 
         if(lobby == null) {
 
-            GUIUtil.lobbyGUI(lby -> {
-                try {
-                    joinCommand(context, lby);
-                } catch (CommandSyntaxException e) {
-                    // Ignore
-                }
-            }, lby -> lby.canAccess(mp), true, mp).open(mp, 0);
+            try {
+                IntegrationManager.openLobbyMenu(lby -> {
+                    try {
+                        joinCommand(context, lby);
+                    } catch (CommandSyntaxException e) {
+                        // Ignore
+                    }
+                }, lby -> lby.canAccess(mp), true, mp);
 
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                throw ex;
+            }
             return 2;
         }
 
@@ -242,13 +247,13 @@ public class MainCommand {
 
         if (map == null) {
 
-            GUIUtil.mapGUI(m -> {
+            IntegrationManager.openMapMenu(m -> {
                 try {
                     viewOrEdit(context, m, edit);
                 } catch (CommandSyntaxException e) {
                     // Ignore
                 }
-            }, m -> edit ? m.canEdit(fp) : m.canView(fp), fp).open(fp, 0);
+            }, m -> edit ? m.canEdit(fp) : m.canView(fp), fp);
 
             return 2;
         }

@@ -179,10 +179,12 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
                 pl.sendTitle(title, 20, 80, 20);
                 pl.sendSubtitle(subtitle, 20, 80, 20);
 
-                RoleData r = currentMap.getGameData().getRoleData(roles.get(pl));
-                if (r.shouldHideName()) {
-                    for (MPlayer sk : seekers) {
-                        if (mod != null) mod.vanishPlayerFor(pl, sk);
+                if (mod != null) {
+                    RoleData r = currentMap.getGameData().getRoleData(roles.get(pl));
+                    if (r.shouldHideName()) {
+                        for (MPlayer sk : seekers) {
+                            mod.vanishPlayerFor(pl, sk);
+                        }
                     }
                 }
 
@@ -228,10 +230,12 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
         for(MPlayer pl : getPlayers()) {
             currentTimer.addViewer(pl);
 
-            RoleData r = currentMap.getGameData().getRoleData(roles.get(pl));
-            if(r.shouldHideName()) {
-                for(MPlayer sk : seekers) {
-                    if(mod != null) mod.revealPlayerFor(pl, sk);
+            if(mod != null) {
+                RoleData r = currentMap.getGameData().getRoleData(roles.get(pl));
+                if (r.shouldHideName()) {
+                    for (MPlayer sk : seekers) {
+                        mod.revealPlayerFor(pl, sk);
+                    }
                 }
             }
         }
@@ -428,9 +432,9 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
         if(state == GameState.HIDING) {
             RoleData rd = currentMap.getGameData().getRoleData(roles.get(player));
 
-            if(!rd.shouldHideName()) {
-                VanishModule mod = MidnightCoreAPI.getModule(VanishModule.class);
-                if(mod != null) {
+            VanishModule mod = MidnightCoreAPI.getModule(VanishModule.class);
+            if(mod != null) {
+                if(!rd.shouldHideName()) {
                     Collection<MPlayer> hiders = getPlayers(pl -> currentMap.getGameData().getRoleData(getRole(pl)).shouldHideName());
                     for (MPlayer h : hiders) {
                         mod.revealPlayerFor(h, player);

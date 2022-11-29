@@ -5,6 +5,8 @@ import org.wallentines.hideandseek.api.game.map.Map;
 import org.wallentines.hideandseek.api.game.map.PlayerClass;
 import org.wallentines.hideandseek.api.game.map.Role;
 import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.midnightlib.registry.Registry;
+import org.wallentines.midnightlib.registry.StringRegistry;
 
 import java.util.Collection;
 
@@ -32,12 +34,12 @@ public interface ContentRegistry {
     Role getRole(Identifier id);
 
 
-    Collection<Map> getMaps();
+    StringRegistry<Map> getMaps();
 
-    Collection<Lobby> getLobbies();
+    StringRegistry<Lobby> getLobbies();
 
-    Collection<PlayerClass> getGlobalClasses();
+    StringRegistry<PlayerClass> getGlobalClasses();
 
-    Collection<GameType> getGameTypes();
+    Registry<GameType> getGameTypes();
 
 }

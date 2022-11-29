@@ -16,9 +16,10 @@ import org.wallentines.hideandseek.common.game.map.RoleDataImpl;
 import org.wallentines.midnightlib.config.ConfigSection;
 import org.wallentines.midnightlib.config.serialization.InlineSerializer;
 import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.midnightlib.registry.Registry;
+import org.wallentines.midnightlib.registry.StringRegistry;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -28,11 +29,11 @@ public class ContentRegistryImpl implements ContentRegistry {
 
     private static final Logger LOGGER = LogManager.getLogger("ContentRegistry");
 
-    private final HashMap<String, Map> maps = new HashMap<>();
-    private final HashMap<String, Lobby> lobbies = new HashMap<>();
-    private final HashMap<String, PlayerClass> classes = new HashMap<>();
-    private final HashMap<Identifier, GameType> gameTypes = new HashMap<>();
-    private final HashMap<Identifier, Role> roles = new HashMap<>();
+    private final StringRegistry<Map> maps = new StringRegistry<>();
+    private final StringRegistry<Lobby> lobbies = new StringRegistry<>();
+    private final StringRegistry<PlayerClass> classes = new StringRegistry<>();
+    private final Registry<GameType> gameTypes = new Registry<>();
+    private final Registry<Role> roles = new Registry<>();
 
     private final HashMap<Role, RoleData> defaultRoleData = new HashMap<>();
 
@@ -44,14 +45,14 @@ public class ContentRegistryImpl implements ContentRegistry {
             throw new IllegalArgumentException("Attempt to register a null map!");
         }
         String id = map.getId();
-        if(maps.containsKey(id)) {
+        if(maps.hasKey(id)) {
             throw new IllegalArgumentException("Attempt to register map with duplicate ID! \"" + id + "\"");
         }
         Matcher m = Constants.VALID_ID.matcher(id);
         if(!m.matches()) {
             throw new IllegalArgumentException("Attempt to register lobby with invalid ID! \"" + id + "\" does not match " + Constants.VALID_ID.pattern());
         }
-        maps.put(map.getId(), map);
+        maps.register(map.getId(), map);
     }
 
     @Override
@@ -60,7 +61,7 @@ public class ContentRegistryImpl implements ContentRegistry {
             throw new IllegalArgumentException("Attempt to register a null lobby!");
         }
         String id = lobby.getId();
-        if(lobbies.containsKey(id)) {
+        if(lobbies.hasKey(id)) {
             throw new IllegalArgumentException("Attempt to register lobby with duplicate ID! \"" + id + "\"");
         }
         Matcher m = Constants.VALID_ID.matcher(id);
@@ -72,7 +73,7 @@ public class ContentRegistryImpl implements ContentRegistry {
             throw new IllegalArgumentException("Attempt to register lobby with invalid ID! \"" + id + "\" is a reserved word!");
         }
 
-        lobbies.put(id, lobby);
+        lobbies.register(id, lobby);
     }
 
     @Override
@@ -81,14 +82,14 @@ public class ContentRegistryImpl implements ContentRegistry {
             throw new IllegalArgumentException("Attempt to register a null global class!");
         }
         String id = clazz.getId();
-        if(classes.containsKey(clazz.getId())) {
+        if(classes.hasKey(clazz.getId())) {
             throw new IllegalArgumentException("Attempt to register global class with duplicate ID! \"" + id + "\"");
         }
         Matcher m = Constants.VALID_ID.matcher(id);
         if(!m.matches()) {
             throw new IllegalArgumentException("Attempt to register global class with invalid ID! \"" + id + "\" does not match " + Constants.VALID_ID.pattern());
         }
-        classes.put(clazz.getId(), clazz);
+        classes.register(clazz.getId(), clazz);
     }
 
     @Override
@@ -97,10 +98,10 @@ public class ContentRegistryImpl implements ContentRegistry {
             throw new IllegalArgumentException("Attempt to register a null game type!");
         }
         Identifier id = type.getId();
-        if(gameTypes.containsKey(type.getId())) {
+        if(gameTypes.hasKey(type.getId())) {
             throw new IllegalArgumentException("Attempt to register game type with duplicate ID! \"" + id + "\"");
         }
-        gameTypes.put(type.getId(), type);
+        gameTypes.register(type.getId(), type);
     }
 
     @Override
@@ -109,10 +110,10 @@ public class ContentRegistryImpl implements ContentRegistry {
             throw new IllegalArgumentException("Attempt to register a null game type!");
         }
         Identifier id = role.getId();
-        if(roles.containsKey(role.getId())) {
+        if(roles.hasKey(role.getId())) {
             throw new IllegalArgumentException("Attempt to register game type with duplicate ID! \"" + id + "\"");
         }
-        return roles.put(role.getId(), role);
+        return roles.register(role.getId(), role);
     }
 
     @Override
@@ -139,27 +140,27 @@ public class ContentRegistryImpl implements ContentRegistry {
     public Role getRole(Identifier id) { return roles.get(id); }
 
     @Override
-    public Collection<Map> getMaps() {
-        return maps.values();
+    public StringRegistry<Map> getMaps() {
+        return maps;
     }
 
     @Override
-    public Collection<Lobby> getLobbies() {
-        return lobbies.values();
+    public StringRegistry<Lobby> getLobbies() {
+        return lobbies;
     }
 
     @Override
-    public Collection<PlayerClass> getGlobalClasses() {
-        return classes.values();
+    public StringRegistry<PlayerClass> getGlobalClasses() {
+        return classes;
     }
 
     @Override
-    public Collection<GameType> getGameTypes() {
-        return gameTypes.values();
+    public Registry<GameType> getGameTypes() {
+        return gameTypes;
     }
 
-    public Collection<Role> getRoles() {
-        return roles.values();
+    public Registry<Role> getRoles() {
+        return roles;
     }
 
     public void setDefaultData(Role role, RoleData data) {

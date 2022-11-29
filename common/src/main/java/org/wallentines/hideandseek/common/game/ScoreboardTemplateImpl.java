@@ -58,7 +58,7 @@ public class ScoreboardTemplateImpl implements ScoreboardTemplate {
                     "%lang<text.lobby>%: %hideandseek_lobby_name%",
                     "%lang<text.game_type>%: %hideandseek_lobby_game_type_name%",
                     "",
-                    "%lang<text.players>%: %hideandseek_lobby_color%%hideandseek_session_player_count% &7/ %hideandseek_lobby_color%%hideandseek_lobby_max_players%"
+                    "%lang<text.players>%: %hideandseek_lobby_color%%session_player_count% &7/ %hideandseek_lobby_color%%hideandseek_lobby_max_players%"
             ));
 
     public static final ScoreboardTemplateImpl MAP_DEFAULT = new ScoreboardTemplateImpl(

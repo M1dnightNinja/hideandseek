@@ -39,6 +39,7 @@ public class HideAndSeek implements ModInitializer {
     @Override
     public void onInitialize() {
 
+
         // Determine the data folder
         Path dataFolder = Paths.get("config/HideAndSeek");
 

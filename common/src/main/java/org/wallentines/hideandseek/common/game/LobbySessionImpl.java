@@ -4,14 +4,13 @@ import org.wallentines.hideandseek.api.HideAndSeekAPI;
 import org.wallentines.hideandseek.api.game.*;
 import org.wallentines.hideandseek.api.game.map.Map;
 import org.wallentines.hideandseek.api.game.timer.GameTimer;
+import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.midnightcore.api.MidnightCoreAPI;
-import org.wallentines.midnightcore.api.module.savepoint.SavepointModule;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.CustomScoreboard;
 import org.wallentines.midnightcore.api.text.LangProvider;
 import org.wallentines.midnightcore.api.text.MComponent;
 import org.wallentines.midnightcore.common.module.session.AbstractSession;
-import org.wallentines.midnightcore.common.util.Util;
 
 import java.util.HashMap;
 
@@ -27,7 +26,7 @@ public class LobbySessionImpl extends AbstractSession implements LobbySession {
 
 
     public LobbySessionImpl(Lobby lobby) {
-
+        super(Constants.DEFAULT_NAMESPACE);
         this.lobby = lobby;
     }
 

@@ -17,12 +17,15 @@ public class UIDisplayImpl implements UIDisplay {
     private MComponent name;
     private final List<MComponent> description = new ArrayList<>();
     private TextColor color;
-
     private MItemStack cachedItem;
-
-    boolean customItem = false;
+    private boolean customItem = false;
+    private final CustomIconData customIcon;
 
     public UIDisplayImpl(MComponent name, Collection<MComponent> description, TextColor color, MItemStack is) {
+        this(name, description, color, is, null);
+    }
+
+    public UIDisplayImpl(MComponent name, Collection<MComponent> description, TextColor color, MItemStack is, CustomIconData icon) {
         this.name = name;
         this.color = color;
         this.description.addAll(description);
@@ -33,6 +36,8 @@ public class UIDisplayImpl implements UIDisplay {
             cachedItem = is.copy();
             customItem = true;
         }
+
+        this.customIcon = icon;
     }
 
     @Override
@@ -62,6 +67,11 @@ public class UIDisplayImpl implements UIDisplay {
     @Override
     public TextColor getColor() {
         return color;
+    }
+
+    @Override
+    public CustomIconData getCustomIcon() {
+        return customIcon;
     }
 
     private MItemStack generateItem() {
@@ -159,6 +169,7 @@ public class UIDisplayImpl implements UIDisplay {
             MComponent.INLINE_SERIALIZER.listOf().entry("description", UIDisplayImpl::getDescription).optional(),
             TextColor.SERIALIZER.entry("color", UIDisplayImpl::getColor).orDefault(new TextColor(Color.WHITE)),
             MItemStack.SERIALIZER.entry("item", UIDisplayImpl::getDisplayItem).optional(),
+            CustomIconData.SERIALIZER.entry("custom_icon", UIDisplayImpl::getCustomIcon).optional(),
             UIDisplayImpl::new
     );
 
