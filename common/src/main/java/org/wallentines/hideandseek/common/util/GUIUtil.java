@@ -92,7 +92,7 @@ public final class GUIUtil {
 
         PagedGUI paged = new PagedGUI(gui);
         int index = 0;
-        for(MPlayer mpl : MidnightCoreAPI.getInstance().getPlayerManager()) {
+        for(MPlayer mpl : player.getServer().getPlayerManager()) {
 
             if(!filter.apply(mpl)) continue;
 

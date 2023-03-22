@@ -1,11 +1,10 @@
 package org.wallentines.hideandseek.api.game;
 
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightcore.api.item.MItemStack;
 import org.wallentines.midnightcore.api.text.MComponent;
-import org.wallentines.midnightcore.api.text.TextColor;
-import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
-import org.wallentines.midnightlib.config.serialization.PrimitiveSerializers;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.midnightlib.math.Color;
 
 import java.util.Collection;
 
@@ -17,7 +16,7 @@ public interface UIDisplay {
 
     MItemStack getDisplayItem();
 
-    TextColor getColor();
+    Color getColor();
 
     CustomIconData getCustomIcon();
 
@@ -36,12 +35,12 @@ public interface UIDisplay {
             this.height = height;
         }
 
-        public static final ConfigSerializer<CustomIconData> SERIALIZER = ConfigSerializer.create(
-                PrimitiveSerializers.STRING.entry("image_file", ci -> ci.imageFile),
-                PrimitiveSerializers.INT.entry("x", ci -> ci.x),
-                PrimitiveSerializers.INT.entry("y", ci -> ci.y),
-                PrimitiveSerializers.INT.entry("width", ci -> ci.width),
-                PrimitiveSerializers.INT.entry("height", ci -> ci.height),
+        public static final Serializer<CustomIconData> SERIALIZER = ObjectSerializer.create(
+                Serializer.STRING.entry("image_file", ci -> ci.imageFile),
+                Serializer.INT.entry("x", ci -> ci.x),
+                Serializer.INT.entry("y", ci -> ci.y),
+                Serializer.INT.entry("width", ci -> ci.width),
+                Serializer.INT.entry("height", ci -> ci.height),
                 CustomIconData::new
         );
     }

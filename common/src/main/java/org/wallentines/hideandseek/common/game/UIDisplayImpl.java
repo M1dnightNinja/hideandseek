@@ -1,11 +1,12 @@
 package org.wallentines.hideandseek.common.game;
 
 import org.wallentines.hideandseek.api.game.UIDisplay;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightcore.api.item.MItemStack;
 import org.wallentines.midnightcore.api.text.MComponent;
 import org.wallentines.midnightcore.api.text.MTextComponent;
 import org.wallentines.midnightcore.api.text.TextColor;
-import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
 import org.wallentines.midnightlib.math.Color;
 
 import java.util.ArrayList;
@@ -16,19 +17,19 @@ public class UIDisplayImpl implements UIDisplay {
 
     private MComponent name;
     private final List<MComponent> description = new ArrayList<>();
-    private TextColor color;
+    private Color color;
     private MItemStack cachedItem;
     private boolean customItem = false;
     private final CustomIconData customIcon;
 
-    public UIDisplayImpl(MComponent name, Collection<MComponent> description, TextColor color, MItemStack is) {
+    public UIDisplayImpl(MComponent name, Collection<MComponent> description, Color color, MItemStack is) {
         this(name, description, color, is, null);
     }
 
-    public UIDisplayImpl(MComponent name, Collection<MComponent> description, TextColor color, MItemStack is, CustomIconData icon) {
+    public UIDisplayImpl(MComponent name, Collection<MComponent> description, Color color, MItemStack is, CustomIconData icon) {
         this.name = name;
         this.color = color;
-        this.description.addAll(description);
+        if(description != null) this.description.addAll(description);
 
         if(is == null) {
             cachedItem = generateItem();
@@ -65,7 +66,7 @@ public class UIDisplayImpl implements UIDisplay {
     }
 
     @Override
-    public TextColor getColor() {
+    public Color getColor() {
         return color;
     }
 
@@ -83,7 +84,7 @@ public class UIDisplayImpl implements UIDisplay {
         this.name = name;
     }
 
-    public void setColor(TextColor color) {
+    public void setColor(Color color) {
         this.color = color;
     }
 
@@ -164,17 +165,17 @@ public class UIDisplayImpl implements UIDisplay {
     }
 
 
-    public static final ConfigSerializer<UIDisplayImpl> SERIALIZER = ConfigSerializer.create(
-            MComponent.INLINE_SERIALIZER.entry("name", UIDisplayImpl::getName),
-            MComponent.INLINE_SERIALIZER.listOf().entry("description", UIDisplayImpl::getDescription).optional(),
-            TextColor.SERIALIZER.entry("color", UIDisplayImpl::getColor).orDefault(new TextColor(Color.WHITE)),
+    public static final Serializer<UIDisplayImpl> SERIALIZER = ObjectSerializer.create(
+            MComponent.SERIALIZER.entry("name", UIDisplayImpl::getName),
+            MComponent.SERIALIZER.listOf().entry("description", UIDisplayImpl::getDescription).optional(),
+            TextColor.SERIALIZER.entry("color", UIDisplayImpl::getColor).orElse(Color.WHITE),
             MItemStack.SERIALIZER.entry("item", UIDisplayImpl::getDisplayItem).optional(),
             CustomIconData.SERIALIZER.entry("custom_icon", UIDisplayImpl::getCustomIcon).optional(),
             UIDisplayImpl::new
     );
 
     public static UIDisplayImpl createDefault(String id) {
-        return new UIDisplayImpl(new MTextComponent(id), new ArrayList<>(), new TextColor(Color.WHITE), null);
+        return new UIDisplayImpl(new MTextComponent(id), new ArrayList<>(), Color.WHITE, null);
     }
 
 }

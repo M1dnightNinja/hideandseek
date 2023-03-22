@@ -8,12 +8,13 @@ import org.wallentines.hideandseek.api.game.timer.GameTimer;
 import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.hideandseek.common.game.timer.AbstractTimer;
 import org.wallentines.midnightcore.api.MidnightCoreAPI;
+import org.wallentines.midnightcore.api.module.savepoint.Savepoint;
 import org.wallentines.midnightcore.api.module.savepoint.SavepointModule;
 import org.wallentines.midnightcore.api.module.vanish.VanishModule;
 import org.wallentines.midnightcore.api.player.Location;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.*;
-import org.wallentines.midnightcore.common.module.session.AbstractSession;
+import org.wallentines.midnightcore.api.module.session.AbstractSession;
 import org.wallentines.midnightlib.math.Vec3d;
 import org.wallentines.midnightlib.registry.Identifier;
 
@@ -42,7 +43,7 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
 
     protected AbstractGameSession(LobbySession lobbySession, GameType type) {
 
-        super(Constants.DEFAULT_NAMESPACE);
+        super(HideAndSeekAPI.DEFAULT_NAMESPACE, EnumSet.of(Savepoint.SaveFlag.GAME_MODE, Savepoint.SaveFlag.LOCATION, Savepoint.SaveFlag.DATA_TAG));
 
         this.type = type;
         this.lobbySession = lobbySession;
@@ -194,11 +195,8 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
 
             type.onStartHiding(this);
 
-            MidnightCoreAPI api = MidnightCoreAPI.getInstance();
-            if (api != null) {
-                for (String s : currentMap.getGameData().getStartCommands()) {
-                    api.executeConsoleCommand(s.replace("%world_id%", getWorldId().toString()), false);
-                }
+            for (String s : currentMap.getGameData().getStartCommands()) {
+                executeCommand(s);
             }
 
         } catch (Throwable th) {
@@ -339,11 +337,13 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
                 continue;
             }
 
-            locations.put(player, current);
+            if(isSafeLocation(player)) {
+                locations.put(player, current);
+            }
 
             for(MapRegion reg : currentMap.getGameData().getRegions()) {
                 Role r = roles.get(player);
-                if(reg.isWithin(current) && !reg.canEnter(r)) {
+                if(reg.isWithin(current) && reg.isDenied(r)) {
 
                     toTeleport.add(player);
                     locations.put(player, prev);
@@ -360,11 +360,11 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
         if(currentMap == null || loading.contains(player)) return;
 
         if(attacker == null) {
-            if(currentMap.getGameData().shouldResetOn(Constants.ID_SERIALIZER.deserialize(sourceId))) {
+            if(currentMap.getGameData().shouldResetOn(Constants.ID_SERIALIZER.readString(sourceId))) {
                 locations.put(player, getSpawnLocation(type.getRespawnPointRole(this)).getCoordinates());
                 toTeleport.add(player);
             }
-            if(currentMap.getGameData().shouldTagOn(Constants.ID_SERIALIZER.deserialize(sourceId)) && type.canTag(this, null, player)) {
+            if(currentMap.getGameData().shouldTagOn(Constants.ID_SERIALIZER.readString(sourceId)) && type.canTag(this, null, player)) {
                 tagPlayer(player, sourceId);
             }
         } else if (type.canTag(this, attacker, player)) {
@@ -503,9 +503,11 @@ public abstract class AbstractGameSession extends AbstractSession implements Gam
     protected abstract void teleport(MPlayer player, Vec3d loc);
     protected abstract Location getSpawnLocation(Role role);
     protected abstract void doMapLoad(Map map, Runnable finished);
+    protected abstract void executeCommand(String command);
     protected abstract void spawnFireworks(Role role, Vec3d location, boolean explode);
     protected abstract void onStart();
     protected abstract Identifier getWorldId();
+    protected abstract boolean isSafeLocation(MPlayer mpl);
 
     public static void registerPlaceholders(PlaceholderManager manager) {
 

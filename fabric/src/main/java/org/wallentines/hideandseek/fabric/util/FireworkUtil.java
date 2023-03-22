@@ -4,13 +4,12 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.item.FireworkRocketItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.gameevent.GameEvent;
 import org.wallentines.midnightcore.api.player.Location;
 import org.wallentines.midnightcore.fabric.util.LocationUtil;
 import org.wallentines.midnightlib.math.Color;
@@ -22,12 +21,19 @@ public class FireworkUtil {
     public static void spawnFireworkExplosion(List<Color> color, List<Color> fadeColor, FireworkRocketItem.Shape type, Location location) {
 
         FireworkRocketEntity ent = spawnFireworkEntity(color,fadeColor,type,location);
+        if(ent == null) return;
 
-        ent.level.broadcastEntityEvent(ent, (byte) 17);
+        MinecraftServer server = ent.getServer();
+        if(server == null) return;
+
+        ent.level.broadcastEntityEvent(ent, (byte)17);
         ent.discard();
     }
 
     public static FireworkRocketEntity spawnFireworkEntity(List<Color> color, List<Color> fadeColor, FireworkRocketItem.Shape type, Location location) {
+        ServerLevel world = LocationUtil.getLevel(location);
+        if(world == null) return null;
+
         CompoundTag fireworkTag = new CompoundTag();
         CompoundTag fireworks = new CompoundTag();
 
@@ -47,7 +53,6 @@ public class FireworkUtil {
         ItemStack fireworkItem = new ItemStack(Items.FIREWORK_ROCKET, 1);
         fireworkItem.setTag(fireworkTag);
 
-        ServerLevel world = LocationUtil.getLevel(location);
 
         FireworkRocketEntity fwk = new FireworkRocketEntity(world, location.getX(), location.getY() + 1.5, location.getZ(), fireworkItem);
         world.addFreshEntity(fwk);

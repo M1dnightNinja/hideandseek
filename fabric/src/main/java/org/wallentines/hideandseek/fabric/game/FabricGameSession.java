@@ -1,5 +1,8 @@
 package org.wallentines.hideandseek.fabric.game;
 
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.FireworkRocketItem;
 import org.wallentines.hideandseek.api.HideAndSeekAPI;
 import org.wallentines.hideandseek.api.game.*;
@@ -8,13 +11,16 @@ import org.wallentines.hideandseek.api.game.map.Role;
 import org.wallentines.hideandseek.api.game.map.RoleData;
 import org.wallentines.hideandseek.common.game.AbstractGameSession;
 import org.wallentines.hideandseek.fabric.util.FireworkUtil;
+import org.wallentines.midnightcore.api.MidnightCoreAPI;
 import org.wallentines.midnightcore.api.player.Location;
 import org.wallentines.midnightcore.api.player.MPlayer;
+import org.wallentines.midnightcore.api.server.MServer;
 import org.wallentines.midnightcore.api.text.LangProvider;
 import org.wallentines.midnightcore.api.text.MComponent;
 import org.wallentines.midnightcore.api.text.MTextComponent;
 import org.wallentines.midnightcore.fabric.event.player.PlayerInteractEvent;
 import org.wallentines.midnightcore.fabric.player.FabricPlayer;
+import org.wallentines.midnightcore.fabric.server.FabricServer;
 import org.wallentines.midnightcore.fabric.util.ConversionUtil;
 import org.wallentines.midnightlib.event.Event;
 import org.wallentines.midnightlib.math.Color;
@@ -96,6 +102,21 @@ public class FabricGameSession extends AbstractGameSession {
     }
 
     @Override
+    protected void executeCommand(String command) {
+
+        MServer srv = MidnightCoreAPI.getRunningServer();
+        if(srv == null) {
+            HideAndSeekAPI.getLogger().warn("Attempt to execute command /" + command + " before server started!");
+            return;
+        }
+
+        MinecraftServer server = ((FabricServer) srv).getInternal();
+        CommandSourceStack stack = server.createCommandSourceStack().withLevel(instance.getLevel());
+        server.getCommands().performPrefixedCommand(stack, command);
+
+    }
+
+    @Override
     protected void spawnFireworks(Role role, Vec3d location, boolean explode) {
 
         if(role == null) return;
@@ -131,6 +152,13 @@ public class FabricGameSession extends AbstractGameSession {
     protected Identifier getWorldId() {
 
         return ConversionUtil.toIdentifier(instance.getLevel().dimension().location());
+    }
+
+    @Override
+    protected boolean isSafeLocation(MPlayer mpl) {
+
+        ServerPlayer spl = FabricPlayer.getInternal(mpl);
+        return spl.isOnGround() || spl.isInWater();
     }
 
     @Override

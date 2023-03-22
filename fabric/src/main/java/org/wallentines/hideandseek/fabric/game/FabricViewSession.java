@@ -7,7 +7,7 @@ import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.hideandseek.common.game.BuiltinRoles;
 import org.wallentines.midnightcore.api.player.Location;
 import org.wallentines.midnightcore.api.player.MPlayer;
-import org.wallentines.midnightcore.common.module.session.AbstractSession;
+import org.wallentines.midnightcore.api.module.session.AbstractSession;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -25,7 +25,7 @@ public class FabricViewSession extends AbstractSession implements ViewingSession
 
     public FabricViewSession(Map map) {
 
-        super(Constants.DEFAULT_NAMESPACE);
+        super(HideAndSeekAPI.DEFAULT_NAMESPACE);
 
         this.map = map;
         this.instance = MapInstance.forViewer(this, map);
@@ -50,7 +50,7 @@ public class FabricViewSession extends AbstractSession implements ViewingSession
     @Override
     public void onDamaged(MPlayer player, MPlayer attacker, String sourceId, float amount) {
 
-        if(attacker == null && map.getGameData().shouldResetOn(Constants.ID_SERIALIZER.deserialize(sourceId))) {
+        if(attacker == null && map.getGameData().shouldResetOn(Constants.ID_SERIALIZER.readString(sourceId))) {
             toTeleport.put(player, instance.getSpawnLocation(BuiltinRoles.HIDER));
         }
 

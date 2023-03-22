@@ -7,12 +7,16 @@ import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.hideandseek.common.core.ContentRegistryImpl;
 import org.wallentines.hideandseek.common.game.ScoreboardTemplateImpl;
 import org.wallentines.hideandseek.common.game.UIDisplayImpl;
+import org.wallentines.mdcfg.ConfigObject;
+import org.wallentines.mdcfg.codec.FileWrapper;
+import org.wallentines.mdcfg.serializer.ConfigContext;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
+import org.wallentines.midnightcore.api.FileConfig;
 import org.wallentines.midnightcore.api.MidnightCoreAPI;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.PlaceholderManager;
 import org.wallentines.midnightcore.api.text.PlaceholderSupplier;
-import org.wallentines.midnightlib.config.FileConfig;
-import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
 
 import java.io.File;
 import java.util.*;
@@ -104,6 +108,7 @@ public class MapImpl implements Map {
     @Override
     public PlayerClass getOrGlobal(String id) {
 
+        if(id == null) return null;
         if(!classes.containsKey(id)) return ContentRegistryImpl.INSTANCE.getGlobalClass(id);
         return getClass(id);
     }
@@ -120,34 +125,33 @@ public class MapImpl implements Map {
 
     public static MapImpl fromFolder(File folder) {
 
-        if(!folder.isDirectory()) throw new IllegalArgumentException("Unable to parse a map from " + folder.getName() + "! Not a folder!");
-        FileConfig mapConfig = FileConfig.findFile(folder.listFiles(), "map");
+        if(!folder.isDirectory()) throw new IllegalArgumentException("Unable to parse a map from " + folder.getPath() + "! Not a folder!");
+        FileWrapper<ConfigObject> mapConfig = FileConfig.find("map", folder);
 
-        if(mapConfig == null) throw new IllegalArgumentException("Unable to find a map config in " + folder.getName() + "!");
+        if(mapConfig == null) throw new IllegalArgumentException("Unable to find a map config in " + folder.getPath() + "!");
+        if(mapConfig.getRoot() == null || !mapConfig.getRoot().isSection()) throw new IllegalStateException("Map config in " + folder.getPath() + " does not contain valid map data!");
 
-        ConfigSerializer<MapImpl> serializer = createSerializer(folder);
-        if(!serializer.canDeserialize(mapConfig.getRoot())) throw new IllegalArgumentException("Unable to parse " + mapConfig.getFile().getName() + " as a map! Missing required entries!");
-
-        return serializer.deserialize(mapConfig.getRoot());
+        Serializer<MapImpl> serializer = createSerializer(folder);
+        return serializer.deserialize(ConfigContext.INSTANCE, mapConfig.getRoot()).getOrThrow();
     }
 
-    public static ConfigSerializer<MapImpl> createSerializer(File folder) {
+    public static Serializer<MapImpl> createSerializer(File folder) {
 
-        return ConfigSerializer.create(
-                ConfigSerializer.<MapMetaImpl, MapImpl>entry(MapMetaImpl.SERIALIZER, "meta", m -> m.meta).orDefault(new MapMetaImpl(new UUID(0L,0L))),
-                ConfigSerializer.<UIDisplayImpl, MapImpl>entry(UIDisplayImpl.SERIALIZER, "display", m -> m.display).optional(),
+        return ObjectSerializer.create(
+                MapMetaImpl.SERIALIZER.<MapImpl>entry( "meta", m -> m.meta).orElse(new MapMetaImpl(new UUID(0L,0L))),
+                UIDisplayImpl.SERIALIZER.<MapImpl>entry("display", m -> m.display).optional(),
                 WorldDataImpl.SERIALIZER.entry("world", m -> m.worldData),
                 GameDataImpl.SERIALIZER.entry("game", m -> m.gameData),
-                ConfigSerializer.<PregameDataImpl, MapImpl>entry(PregameDataImpl.SERIALIZER, "pregame", m -> m.pregameData).orDefault(new PregameDataImpl(null, 0.0d)),
-                ConfigSerializer.<PlayerClassImpl, MapImpl>listEntry(PlayerClassImpl.SERIALIZER, "classes", m -> m.classes.values()).optional(),
-                ConfigSerializer.<ScoreboardTemplateImpl, MapImpl>entry(ScoreboardTemplateImpl.SERIALIZER, "scoreboard", m -> m.scoreboardTemplate).optional(),
+                PregameDataImpl.SERIALIZER.<MapImpl>entry("pregame", m -> m.pregameData).orElse(new PregameDataImpl(null, 0.0d)),
+                PlayerClassImpl.SERIALIZER.listOf().<MapImpl>entry("classes", m -> m.classes.values()).optional(),
+                ScoreboardTemplateImpl.SERIALIZER.<MapImpl>entry("scoreboard", m -> m.scoreboardTemplate).optional(),
                 (meta, display, world, game, pregame, classes, scoreboard) -> {
 
                     String id = folder.getName();
                     if(display == null) display = UIDisplayImpl.createDefault(id);
 
                     MapImpl out = new MapImpl(id, folder, meta, display, world, game, pregame, scoreboard);
-                    for(PlayerClassImpl clz : classes) {
+                    if(classes != null) for(PlayerClassImpl clz : classes) {
                         out.classes.put(clz.getId(), clz);
                     }
                     return out;
@@ -167,30 +171,30 @@ public class MapImpl implements Map {
         Constants.registerInlinePlaceholder(manager, "map_rain", PlaceholderSupplier.create(MapImpl.class, m -> Objects.toString(m.worldData.hasRain())));
         Constants.registerInlinePlaceholder(manager, "map_thunder", PlaceholderSupplier.create(MapImpl.class, m -> Objects.toString(m.worldData.hasThunder())));
 
-        Constants.registerInlinePlaceholder(manager, "map_author_name", PlaceholderSupplier.create(MapImpl.class, m -> MidnightCoreAPI.getInstance().getPlayerManager().getPlayer(m.meta.getAuthor()).getUsername()));
+        Constants.registerInlinePlaceholder(manager, "map_author_name", PlaceholderSupplier.create(MapImpl.class, m -> MidnightCoreAPI.getRunningServer().getPlayer(m.meta.getAuthor()).getUsername()));
 
         Constants.registerInlinePlaceholder(manager, "map_hide_time", PlaceholderSupplier.create(MapImpl.class, m -> Objects.toString(m.getGameData().getHideTime())));
         Constants.registerInlinePlaceholder(manager, "map_seek_time", PlaceholderSupplier.create(MapImpl.class, m -> Objects.toString(m.getGameData().getSeekTime())));
         Constants.registerInlinePlaceholder(manager, "map_resource_pack_url", PlaceholderSupplier.create(MapImpl.class, m -> Objects.toString(m.getGameData().getResourcePack().getURL())));
 
         Constants.registerPlaceholder(manager, "map_role_name", PlaceholderSupplier.createWithParameter(MapImpl.class,
-                (m, param) -> m.getGameData().getRoleData(ContentRegistryImpl.REGISTERED_ROLE.deserialize(param)).getName(),
-                param -> ContentRegistryImpl.INSTANCE.getDefaultData(ContentRegistryImpl.REGISTERED_ROLE.deserialize(param)).getName())
+                (m, param) -> m.getGameData().getRoleData(ContentRegistryImpl.REGISTERED_ROLE.readString(param)).getName(),
+                param -> ContentRegistryImpl.INSTANCE.getDefaultData(ContentRegistryImpl.REGISTERED_ROLE.readString(param)).getName())
         );
 
         Constants.registerPlaceholder(manager, "map_role_name_proper", PlaceholderSupplier.createWithParameter(MapImpl.class,
-                (m, param) -> m.getGameData().getRoleData(ContentRegistryImpl.REGISTERED_ROLE.deserialize(param)).getProperName(),
-                param -> ContentRegistryImpl.INSTANCE.getDefaultData(ContentRegistryImpl.REGISTERED_ROLE.deserialize(param)).getProperName())
+                (m, param) -> m.getGameData().getRoleData(ContentRegistryImpl.REGISTERED_ROLE.readString(param)).getProperName(),
+                param -> ContentRegistryImpl.INSTANCE.getDefaultData(ContentRegistryImpl.REGISTERED_ROLE.readString(param)).getProperName())
         );
 
         Constants.registerPlaceholder(manager, "map_role_name_plural", PlaceholderSupplier.createWithParameter(MapImpl.class,
-                (m, param) -> m.getGameData().getRoleData(ContentRegistryImpl.REGISTERED_ROLE.deserialize(param)).getPluralName(),
-                param -> ContentRegistryImpl.INSTANCE.getDefaultData(ContentRegistryImpl.REGISTERED_ROLE.deserialize(param)).getPluralName())
+                (m, param) -> m.getGameData().getRoleData(ContentRegistryImpl.REGISTERED_ROLE.readString(param)).getPluralName(),
+                param -> ContentRegistryImpl.INSTANCE.getDefaultData(ContentRegistryImpl.REGISTERED_ROLE.readString(param)).getPluralName())
         );
 
         Constants.registerInlinePlaceholder(manager, "map_role_color", PlaceholderSupplier.createWithParameter(MapImpl.class,
-                (m, param) -> m.getGameData().getRoleData(ContentRegistryImpl.REGISTERED_ROLE.deserialize(param)).getColor().toHex(),
-                param -> ContentRegistryImpl.INSTANCE.getDefaultData(ContentRegistryImpl.REGISTERED_ROLE.deserialize(param)).getColor().toHex())
+                (m, param) -> m.getGameData().getRoleData(ContentRegistryImpl.REGISTERED_ROLE.readString(param)).getColor().toHex(),
+                param -> ContentRegistryImpl.INSTANCE.getDefaultData(ContentRegistryImpl.REGISTERED_ROLE.readString(param)).getColor().toHex())
         );
 
     }

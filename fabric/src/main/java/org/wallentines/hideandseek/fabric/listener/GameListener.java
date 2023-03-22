@@ -11,16 +11,14 @@ import org.wallentines.hideandseek.api.core.SessionManager;
 import org.wallentines.hideandseek.api.game.EditingSession;
 import org.wallentines.hideandseek.api.game.LobbySession;
 import org.wallentines.hideandseek.api.game.ViewingSession;
-import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.hideandseek.common.game.timer.AbstractTimer;
 import org.wallentines.hideandseek.common.core.ContentRegistryImpl;
 import org.wallentines.hideandseek.common.game.PermissionCache;
 import org.wallentines.midnightcore.api.module.session.Session;
+import org.wallentines.midnightcore.fabric.event.entity.EntityDamageEvent;
 import org.wallentines.midnightcore.fabric.event.player.PlayerFoodLevelChangeEvent;
 import org.wallentines.midnightcore.fabric.event.player.PlayerJoinEvent;
-import org.wallentines.midnightcore.fabric.event.player.PlayerLeaveEvent;
 import org.wallentines.midnightcore.fabric.event.server.ServerStopEvent;
-import org.wallentines.midnightcore.fabric.event.world.EntityDamageEvent;
 import org.wallentines.midnightcore.fabric.player.FabricPlayer;
 import org.wallentines.midnightlib.event.Event;
 
@@ -29,7 +27,7 @@ import java.util.HashSet;
 public class GameListener {
 
     private static final SessionManager SESSION_MANAGER = HideAndSeekAPI.getInstance().getSessionManager();
-    private static final ResourceLocation EARLY_PHASE = new ResourceLocation(Constants.DEFAULT_NAMESPACE, "early");
+    private static final ResourceLocation EARLY_PHASE = new ResourceLocation(HideAndSeekAPI.DEFAULT_NAMESPACE, "early");
 
     private static final HashSet<ServerPlayer> ADMINS = new HashSet<>();
 
@@ -96,7 +94,9 @@ public class GameListener {
         FabricPlayer fp = FabricPlayer.wrap(event.getPlayer());
 
         Session session = SESSION_MANAGER.getModule().getSession(fp);
-        if(session != null) event.setCancelled(true);
+        if(session != null && session.getNamespace().equals(HideAndSeekAPI.DEFAULT_NAMESPACE)) {
+            event.setCancelled(true);
+        }
     }
 
 }

@@ -2,8 +2,8 @@ package org.wallentines.hideandseek.common.game.map;
 
 import org.wallentines.hideandseek.api.game.map.WorldData;
 import org.wallentines.hideandseek.common.Constants;
-import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
-import org.wallentines.midnightlib.config.serialization.PrimitiveSerializers;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightlib.math.Vec3d;
 import org.wallentines.midnightlib.registry.Identifier;
 
@@ -59,11 +59,11 @@ public class WorldDataImpl implements WorldData {
         return out;
     }
 
-    public static final ConfigSerializer<WorldDataImpl> SERIALIZER = ConfigSerializer.create(
-            Constants.ID_SERIALIZER.entry("dimension_type", WorldDataImpl::getDimensionType).orDefault(new Identifier("minecraft", "overworld")),
-            PrimitiveSerializers.BOOLEAN.entry("random_time", WorldDataImpl::hasRandomTime).orDefault(false),
-            PrimitiveSerializers.BOOLEAN.entry("rain", WorldDataImpl::hasRain).orDefault(false),
-            PrimitiveSerializers.BOOLEAN.entry("thunder", WorldDataImpl::hasThunder).orDefault(false),
+    public static final Serializer<WorldDataImpl> SERIALIZER = ObjectSerializer.create(
+            Constants.ID_SERIALIZER.entry("dimension_type", WorldDataImpl::getDimensionType).orElse(new Identifier("minecraft", "overworld")),
+            Serializer.BOOLEAN.entry("random_time", WorldDataImpl::hasRandomTime).orElse(false),
+            Serializer.BOOLEAN.entry("rain", WorldDataImpl::hasRain).orElse(false),
+            Serializer.BOOLEAN.entry("thunder", WorldDataImpl::hasThunder).orElse(false),
             Vec3d.SERIALIZER.listOf().entry("firework_spawners", WorldDataImpl::getFireworkSpawners).optional(),
             WorldDataImpl::make
     );

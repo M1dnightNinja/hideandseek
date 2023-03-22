@@ -57,7 +57,7 @@ public class IntegrationManager {
     static {
 
         try {
-            Class.forName("org.wallentines.midnightessentials.api.MidnightEssentialsAPI");
+            Class.forName("org.wallentines.messentials.MidnightEssentialsAPI");
             MIDNIGHT_ESSENTIALS = true;
         } catch (ClassNotFoundException ex) {
             // MidnightEssentials not found

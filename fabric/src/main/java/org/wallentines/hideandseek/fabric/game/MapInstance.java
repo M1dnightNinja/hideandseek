@@ -1,32 +1,38 @@
 package org.wallentines.hideandseek.fabric.game;
 
+import com.google.common.collect.ImmutableList;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.ServerScoreboard;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
-import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
+import org.wallentines.dll.DynamicLevelCallback;
+import org.wallentines.dll.DynamicLevelContext;
+import org.wallentines.dll.DynamicLevelStorage;
+import org.wallentines.dll.WorldConfig;
 import org.wallentines.hideandseek.api.HideAndSeekAPI;
 import org.wallentines.hideandseek.api.game.*;
 import org.wallentines.hideandseek.api.game.map.Map;
 import org.wallentines.hideandseek.api.game.map.Role;
 import org.wallentines.hideandseek.api.game.map.RoleData;
-import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.hideandseek.common.integration.IntegrationManager;
+import org.wallentines.midnightcore.api.MidnightCoreAPI;
 import org.wallentines.midnightcore.api.module.session.Session;
 import org.wallentines.midnightcore.api.player.Location;
 import org.wallentines.midnightcore.api.player.MPlayer;
-import org.wallentines.midnightcore.common.module.session.AbstractSession;
-import org.wallentines.midnightcore.fabric.MidnightCore;
-import org.wallentines.midnightcore.fabric.level.*;
+import org.wallentines.midnightcore.api.server.MServer;
+import org.wallentines.midnightcore.api.module.session.AbstractSession;
 import org.wallentines.midnightcore.fabric.player.FabricPlayer;
+import org.wallentines.midnightcore.fabric.server.FabricServer;
+import org.wallentines.midnightcore.fabric.text.TeamBuilder;
 import org.wallentines.midnightcore.fabric.util.ConversionUtil;
 import org.wallentines.midnightlib.math.Vec3d;
 import org.wallentines.midnightlib.registry.Identifier;
@@ -50,21 +56,18 @@ public class MapInstance {
     private DynamicLevelContext context;
     private ServerLevel level;
 
-    private ServerScoreboard scoreboard;
+    private final boolean init;
 
     private final HashMap<Role, Location> spawnLocations = new HashMap<>();
-    private final HashMap<Role, PlayerTeam> teams = new HashMap<>();
+    private final HashMap<Role, TeamBuilder> teams = new HashMap<>();
 
-    public MapInstance(Map map, Session session, String identifier, boolean createTeams, boolean save) {
+    public MapInstance(Map map, Session session, String identifier, boolean createTeams, boolean save, boolean init) {
         this.identifier = identifier;
         this.session = session;
         this.map = map;
         this.createTeams = createTeams;
         this.shouldSave = save;
-
-        if(createTeams) {
-            this.scoreboard = MidnightCore.getInstance().getServer().getScoreboard();
-        }
+        this.init = init;
     }
 
     public void loadWorld(Runnable onComplete, Runnable onFail) {
@@ -73,13 +76,43 @@ public class MapInstance {
 
     public void loadWorld(Runnable onComplete, Runnable onFail, Consumer<Float> onProgress) {
 
-        ResourceKey<LevelStem> key = ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, ConversionUtil.toResourceLocation(map.getWorldData().getDimensionType()));
-        ResourceLocation loc = new ResourceLocation(Constants.DEFAULT_NAMESPACE, map.getId() + "_" + identifier);
+        ResourceKey<DimensionType> key = ResourceKey.create(Registries.DIMENSION_TYPE, ConversionUtil.toResourceLocation(map.getWorldData().getDimensionType()));
+        ResourceLocation loc = new ResourceLocation(HideAndSeekAPI.DEFAULT_NAMESPACE, map.getId() + "_" + identifier);
 
         DynamicLevelStorage storage = LEVEL_STORAGE_CACHE.computeIfAbsent(map, k -> DynamicLevelStorage.create(map.getDataFolder().toPath(), map.getDataFolder().toPath().resolve("backups")));
-        WorldConfig config = new WorldConfig(loc).noSave(!shouldSave).rootDimensionType(key).ignoreSessionLock(true).generator(EmptyGenerator.create(Biomes.FOREST));
 
-        DynamicLevelContext ctx = storage.createWorldContext("world", config);
+        MServer server = MidnightCoreAPI.getRunningServer();
+        if(server == null) {
+            HideAndSeekAPI.getLogger().warn("Attempt to load a HideAndSeek world before server startup!");
+            onFail.run();
+            return;
+        }
+
+        RegistryAccess.Frozen access = ((FabricServer) server).getInternal().registryAccess();
+
+        WorldConfig.Builder builder = WorldConfig.builder()
+                .autoSave(shouldSave)
+                .ignoreSessionLock(true)
+                .levelName("world")
+                .pregenRadius(5)
+                .addDimension(
+                    loc,
+                    WorldConfig.dimension(access, LevelStem.OVERWORLD)
+                        .type(key)
+                        .emptyGenerator(Biomes.FOREST)
+                );
+
+        if(init) {
+            builder.gameRule(GameRules.RULE_COMMANDBLOCKOUTPUT, false);
+            builder.gameRule(GameRules.RULE_DOMOBSPAWNING, false);
+            builder.gameRule(GameRules.RULE_MOBGRIEFING, false);
+            builder.gameRule(GameRules.RULE_DOINSOMNIA, false);
+            builder.gameRule(GameRules.RULE_ANNOUNCE_ADVANCEMENTS, false);
+            builder.gameRule(GameRules.RULE_SPECTATORSGENERATECHUNKS, false);
+            builder.gameRule(GameRules.RULE_DOFIRETICK, false);
+        }
+
+        DynamicLevelContext ctx = storage.createWorldContext(builder.build());
 
         Identifier worldId = ConversionUtil.toIdentifier(loc);
 
@@ -87,36 +120,31 @@ public class MapInstance {
             org.wallentines.hideandseek.common.integration.MidnightEssentialsIntegration.loadBlockCommandsForWorld(map, worldId);
         }
 
-        ctx.loadDimension(config.getRootDimensionId(), new DynamicLevelCallback() {
-            @Override
-            public void onLoaded(ServerLevel lvl) {
+        ctx.loadAllDimensions(DynamicLevelCallback.of(
+                lvl -> {
+                    if (lvl == null) {
+                        onFail.run();
+                        return;
+                    }
+                    lvl.noSave = !shouldSave;
 
-                if (lvl == null) {
-                    onFail.run();
-                    return;
-                }
-                lvl.noSave = !shouldSave;
+                    context = ctx;
+                    level = lvl;
 
-                context = ctx;
-                level = lvl;
+                    lvl.setWeatherParameters(0, Integer.MAX_VALUE, map.getWorldData().hasRain(), map.getWorldData().hasThunder());
+                    if (map.getWorldData().hasRandomTime()) {
+                        lvl.setDayTime(AbstractSession.RANDOM.nextLong(24000L));
+                    }
 
-                lvl.setWeatherParameters(0, Integer.MAX_VALUE, map.getWorldData().hasRain(), map.getWorldData().hasThunder());
-                if (map.getWorldData().hasRandomTime()) {
-                    lvl.setDayTime(AbstractSession.RANDOM.nextLong(24000L));
-                }
+                    if(session != null && IntegrationManager.playersWithMapPNG(session.getPlayers()) > 0) {
+                        org.wallentines.hideandseek.common.integration.MapPNGIntegration.loadMapsForWorld(map, worldId);
+                    }
 
-                if(IntegrationManager.playersWithMapPNG(session.getPlayers()) > 0) {
-                    org.wallentines.hideandseek.common.integration.MapPNGIntegration.loadMapsForWorld(map, worldId);
-                }
-
-                onComplete.run();
-            }
-
-            @Override
-            public void onProgress(float v) {
-                onProgress.accept(v);
-            }
-        });
+                    onComplete.run();
+                },
+                onFail,
+                onProgress
+        ));
     }
 
     public void unloadWorld() {
@@ -132,7 +160,7 @@ public class MapInstance {
 
         if(IntegrationManager.isMidnightEssentialsPresent()) {
 
-            Identifier id = ConversionUtil.toIdentifier(context.getConfig().getRootDimensionId().location());
+            Identifier id = ConversionUtil.toIdentifier(context.getConfig().getDimensionKey(LevelStem.OVERWORLD).location());
 
             if(shouldSave) {
                 org.wallentines.hideandseek.common.integration.MidnightEssentialsIntegration.saveBlockCommandsForWorld(map, id);
@@ -166,20 +194,17 @@ public class MapInstance {
     public void addToTeam(MPlayer player, Role role) {
         if(!createTeams) return;
 
-        PlayerTeam team = teams.computeIfAbsent(role, k -> {
+        TeamBuilder team = teams.computeIfAbsent(role, k -> {
 
             RoleData data = map.getGameData().getRoleData(role);
             if(data == null) return null;
 
-            PlayerTeam out = new PlayerTeam(scoreboard, generateRandomId());
-            ChatFormatting fmt = ChatFormatting.getById(data.getColor().toRGBI());
-            if(fmt != null) out.setColor(fmt);
-
+            TeamBuilder out = new TeamBuilder(generateRandomId()).color(ChatFormatting.getById(data.getColor().toRGBI()));
             if(data.shouldHideName()) {
-                out.setNameTagVisibility(Team.Visibility.NEVER);
+                out.nameTagVisibility(Team.Visibility.NEVER);
             }
 
-            Packet<?> pck = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(out, true);
+            Packet<?> pck = out.addPacket();
             for(MPlayer mpl : session.getPlayers()) {
                 ServerPlayer spl = FabricPlayer.getInternal(mpl);
                 spl.connection.send(pck);
@@ -190,7 +215,8 @@ public class MapInstance {
 
         if(team == null) return;
 
-        Packet<?> pck = ClientboundSetPlayerTeamPacket.createPlayerPacket(team, player.getUsername(), ClientboundSetPlayerTeamPacket.Action.ADD);
+        team.addMember(player.getUsername());
+        Packet<?> pck = team.addMembersPacket(ImmutableList.of(player.getUsername()));
         for(MPlayer mpl : session.getPlayers()) {
             ServerPlayer spl = FabricPlayer.getInternal(mpl);
             spl.connection.send(pck);
@@ -203,11 +229,12 @@ public class MapInstance {
         if(!createTeams) return;
 
         String un = player.getUsername();
-        for(PlayerTeam team : teams.values()) {
-            if(!team.getPlayers().contains(un)) {
+        for(TeamBuilder team : teams.values()) {
+            if(team.getMembers().contains(un)) {
+                team.removeMember(un);
                 for (MPlayer mpl : session.getPlayers()) {
                     ServerPlayer spl = FabricPlayer.getInternal(mpl);
-                    spl.connection.send(ClientboundSetPlayerTeamPacket.createPlayerPacket(team, un, ClientboundSetPlayerTeamPacket.Action.REMOVE));
+                    spl.connection.send(team.removeMembersPacket(ImmutableList.of(un)));
                 }
             }
         }
@@ -216,25 +243,29 @@ public class MapInstance {
     public void clearTeams() {
         if(!createTeams) return;
 
-        for(PlayerTeam t : teams.values()) {
-            scoreboard.removePlayerTeam(t);
+        for(TeamBuilder t : teams.values()) {
+            Packet<?> pck = t.removePacket();
+            for(MPlayer mpl : session.getPlayers()) {
+                FabricPlayer.getInternal(mpl).connection.send(pck);
+            }
         }
     }
 
     public static MapInstance forLobby(LobbySession lobby, Map map) {
 
         String id = lobby.getLobby().getId();
-        return new MapInstance(map, lobby, id, true, false);
+        return new MapInstance(map, lobby, id, true, false, false);
     }
 
-    public static MapInstance forEditor(Session session, Map map) {
+    public static MapInstance forEditor(Session session, Map map, boolean initialize) {
 
-        return new MapInstance(map, session, "editing", false, true);
+        return new MapInstance(map, session, "editing", false, true, initialize);
+
     }
 
     public static MapInstance forViewer(Session session, Map map) {
 
-        return new MapInstance(map, session, "viewing", false, false);
+        return new MapInstance(map, session, "viewing", false, false, false);
     }
 
     public ServerLevel getLevel() {

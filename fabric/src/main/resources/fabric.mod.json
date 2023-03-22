@@ -10,7 +10,8 @@
     },
     "mixins": [ ],
     "depends": {
-        "fabricloader": ">=${fabricLoader}",
+        "midnightcore": "*",
+        "dynamiclevelloader": "*",
         "minecraft": ">=${minecraftVersion}"
     },
     "name": "${name}",

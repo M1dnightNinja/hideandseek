@@ -128,7 +128,7 @@ public class MapArgumentType implements ArgumentType<MapArgumentType.ParsedMap> 
 
         String arg = ArgumentTypes.getSingleArg(reader);
 
-        Map m = ContentRegistryImpl.REGISTERED_MAP.deserialize(arg);
+        Map m = ContentRegistryImpl.REGISTERED_MAP.readString(arg);
         if(m == null) throw INVALID_MAP.createWithContext(reader);
 
         return new ParsedMap(m, filter);

@@ -7,7 +7,6 @@ import org.wallentines.hideandseek.api.game.map.Map;
 import org.wallentines.hideandseek.common.core.ContentRegistryImpl;
 import org.wallentines.hideandseek.common.util.GUIUtil;
 import org.wallentines.midnightcore.api.MidnightCoreAPI;
-import org.wallentines.midnightcore.api.module.extension.ExtensionModule;
 import org.wallentines.midnightcore.api.module.extension.ServerExtensionModule;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.MComponent;
@@ -27,11 +26,8 @@ public class NativeUIIntegration {
 
     private static NativeUIExtension getExtension(MPlayer player) {
 
-        ExtensionModule module = MidnightCoreAPI.getModule(ExtensionModule.class);
-        if(module == null || module.isClient()) return null;
-
-        ServerExtensionModule ext = (ServerExtensionModule) module;
-        if(!ext.playerHasExtension(player, NativeUIExtension.ID)) return null;
+        ServerExtensionModule module = MidnightCoreAPI.getModule(ServerExtensionModule.class);
+        if(module == null || !module.playerHasExtension(player, NativeUIExtension.ID)) return null;
 
         return module.getExtension(NativeUIExtension.class);
     }
@@ -169,7 +165,7 @@ public class NativeUIIntegration {
 
             scroll.addChild(fromDisplay(map.getDisplay(), menu, columnOffset + 12, rowOffset + 12, id, loadedImages));
 
-            menu.setClickAction(id, mpl -> MidnightCoreAPI.getInstance().executeOnServer(() -> {
+            menu.setClickAction(id, mpl -> mpl.getServer().submit(() -> {
                 ext.closeMenu(mpl);
                 choice.accept(map);
             }));

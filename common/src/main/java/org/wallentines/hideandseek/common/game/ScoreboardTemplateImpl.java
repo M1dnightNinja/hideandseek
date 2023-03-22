@@ -1,11 +1,11 @@
 package org.wallentines.hideandseek.common.game;
 
 import org.wallentines.hideandseek.api.game.ScoreboardTemplate;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightcore.api.text.CustomScoreboard;
 import org.wallentines.midnightcore.api.text.MComponent;
 import org.wallentines.midnightcore.api.text.PlaceholderManager;
-import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
-import org.wallentines.midnightlib.config.serialization.PrimitiveSerializers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,9 +45,9 @@ public class ScoreboardTemplateImpl implements ScoreboardTemplate {
         }
     }
 
-    public static final ConfigSerializer<ScoreboardTemplateImpl> SERIALIZER = ConfigSerializer.create(
-            PrimitiveSerializers.STRING.entry("title", ScoreboardTemplateImpl::getTitle),
-            PrimitiveSerializers.STRING.listOf().entry("lines", ScoreboardTemplateImpl::getLines),
+    public static final Serializer<ScoreboardTemplateImpl> SERIALIZER = ObjectSerializer.create(
+            Serializer.STRING.entry("title", ScoreboardTemplateImpl::getTitle),
+            Serializer.STRING.listOf().entry("lines", ScoreboardTemplateImpl::getLines),
             ScoreboardTemplateImpl::new
     );
 

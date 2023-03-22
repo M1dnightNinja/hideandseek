@@ -1,10 +1,10 @@
 package org.wallentines.hideandseek.common.game.map;
 
 import org.wallentines.hideandseek.api.game.map.ResourcePackData;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.MComponent;
-import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
-import org.wallentines.midnightlib.config.serialization.PrimitiveSerializers;
 
 import java.util.function.Consumer;
 
@@ -52,11 +52,11 @@ public class ResourcePackDataImpl implements ResourcePackData {
         player.applyResourcePack(url, hash, force, prompt, onResponse);
     }
 
-    public static final ConfigSerializer<ResourcePackDataImpl> SERIALIZER = ConfigSerializer.create(
-            PrimitiveSerializers.STRING.entry("url", ResourcePackDataImpl::getURL),
-            PrimitiveSerializers.STRING.entry("hash", ResourcePackDataImpl::getHash).orDefault(""),
-            PrimitiveSerializers.BOOLEAN.entry("forced", ResourcePackDataImpl::isForced).orDefault(true),
-            MComponent.INLINE_SERIALIZER.entry("prompt", ResourcePackDataImpl::getPrompt).orDefault(null),
+    public static final Serializer<ResourcePackDataImpl> SERIALIZER = ObjectSerializer.create(
+            Serializer.STRING.entry("url", ResourcePackDataImpl::getURL),
+            Serializer.STRING.entry("hash", ResourcePackDataImpl::getHash).orElse(""),
+            Serializer.BOOLEAN.entry("forced", ResourcePackDataImpl::isForced).orElse(true),
+            MComponent.SERIALIZER.entry("prompt", ResourcePackDataImpl::getPrompt).orElse(null),
             ResourcePackDataImpl::new
     );
 

@@ -15,7 +15,7 @@ public interface SessionManager {
 
     EditingSession getEditingSession(Map map);
 
-    EditingSession createEditingSession(Map map);
+    EditingSession createEditingSession(Map map, boolean init);
 
     ViewingSession getViewingSession(Map map);
 

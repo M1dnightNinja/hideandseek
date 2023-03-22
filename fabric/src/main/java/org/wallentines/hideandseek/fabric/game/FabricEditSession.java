@@ -3,10 +3,9 @@ package org.wallentines.hideandseek.fabric.game;
 import org.wallentines.hideandseek.api.HideAndSeekAPI;
 import org.wallentines.hideandseek.api.game.EditingSession;
 import org.wallentines.hideandseek.api.game.map.Map;
-import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.hideandseek.common.game.BuiltinRoles;
 import org.wallentines.midnightcore.api.player.MPlayer;
-import org.wallentines.midnightcore.common.module.session.AbstractSession;
+import org.wallentines.midnightcore.api.module.session.AbstractSession;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -19,18 +18,22 @@ public class FabricEditSession extends AbstractSession implements EditingSession
     private final Queue<MPlayer> waiting = new ArrayDeque<>();
     private boolean loaded = false;
 
-    public FabricEditSession(Map map) {
+    public FabricEditSession(Map map, boolean init) {
 
-        super(Constants.DEFAULT_NAMESPACE);
+        super(HideAndSeekAPI.DEFAULT_NAMESPACE);
 
         this.map = map;
-        this.instance = MapInstance.forEditor(this, map);
+        this.instance = MapInstance.forEditor(this, map, init);
 
         instance.loadWorld(() -> {
             loaded = true;
             waiting.forEach(this::teleportPlayer);
             waiting.clear();
         }, this::shutdown);
+    }
+
+    public MapInstance getInstance() {
+        return instance;
     }
 
     @Override

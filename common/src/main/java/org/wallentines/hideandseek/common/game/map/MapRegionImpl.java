@@ -4,20 +4,18 @@ import org.wallentines.hideandseek.api.HideAndSeekAPI;
 import org.wallentines.hideandseek.api.game.map.MapRegion;
 import org.wallentines.hideandseek.api.game.map.Role;
 import org.wallentines.hideandseek.api.game.map.RoleData;
-import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.hideandseek.common.core.ContentRegistryImpl;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.SerializeContext;
+import org.wallentines.mdcfg.serializer.SerializeResult;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.CustomPlaceholder;
 import org.wallentines.midnightcore.api.text.MComponent;
-import org.wallentines.midnightlib.config.ConfigSection;
-import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
 import org.wallentines.midnightlib.math.Region;
 import org.wallentines.midnightlib.math.Vec3d;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class MapRegionImpl implements MapRegion {
 
@@ -28,6 +26,12 @@ public class MapRegionImpl implements MapRegion {
     public MapRegionImpl(MComponent name, Region region) {
         this.name = name;
         this.region = region;
+    }
+
+    public MapRegionImpl(MComponent name, Region region, Collection<Role> denied) {
+        this.name = name;
+        this.region = region;
+        this.denied.addAll(denied);
     }
 
     @Override
@@ -42,6 +46,11 @@ public class MapRegionImpl implements MapRegion {
 
     @Override
     public boolean canEnter(Role role) {
+        return !denied.contains(role);
+    }
+
+    @Override
+    public boolean isDenied(Role role) {
         return denied.contains(role);
     }
 
@@ -51,28 +60,23 @@ public class MapRegionImpl implements MapRegion {
         return HideAndSeekAPI.getInstance().getLangProvider().getMessage("region.deny", player, player, data, CustomPlaceholder.create("region_name", name));
     }
 
-    public static final ConfigSerializer<MapRegionImpl> SERIALIZER = new ConfigSerializer<>() {
+    public static final Serializer<MapRegion> SERIALIZER = new Serializer<>() {
         @Override
-        public MapRegionImpl deserialize(ConfigSection section) {
-
-            MComponent name = section.get("name", MComponent.class);
-            Region reg = section.get("bounds", Region.class);
-
-            MapRegionImpl out = new MapRegionImpl(name, reg);
-            if(section.has("denied", List.class)) {
-                section.getListFiltered("denied", Constants.ID_SERIALIZER).forEach(id -> {
-                    Role r = ContentRegistryImpl.INSTANCE.getRole(id);
-                    if(r == null) return;
-                    out.denied.add(r);
-                });
-            }
-
-            return out;
+        public <O> SerializeResult<O> serialize(SerializeContext<O> context, MapRegion value) {
+            if(!(value instanceof MapRegionImpl)) return SerializeResult.failure(value + " is not a MapRegionImpl!");
+            return INTERNAL_SERIALIZER.serialize(context, (MapRegionImpl) value);
         }
 
         @Override
-        public ConfigSection serialize(MapRegionImpl object) {
-            return new ConfigSection().with("name", object.name).with("bounds", object.region).with("denied", new ArrayList<>(object.denied));
+        public <O> SerializeResult<MapRegion> deserialize(SerializeContext<O> context, O value) {
+            return INTERNAL_SERIALIZER.deserialize(context, value).flatMap(mri -> mri);
         }
     };
+
+    private static final Serializer<MapRegionImpl> INTERNAL_SERIALIZER = ObjectSerializer.create(
+            MComponent.SERIALIZER.entry("name", MapRegionImpl::getName),
+            Region.SERIALIZER.entry("bounds", mri -> mri.region),
+            ContentRegistryImpl.REGISTERED_ROLE.listOf().entry("denied", mri -> mri.denied),
+            MapRegionImpl::new
+    );
 }

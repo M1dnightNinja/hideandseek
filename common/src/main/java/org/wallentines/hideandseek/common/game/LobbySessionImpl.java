@@ -4,14 +4,14 @@ import org.wallentines.hideandseek.api.HideAndSeekAPI;
 import org.wallentines.hideandseek.api.game.*;
 import org.wallentines.hideandseek.api.game.map.Map;
 import org.wallentines.hideandseek.api.game.timer.GameTimer;
-import org.wallentines.hideandseek.common.Constants;
-import org.wallentines.midnightcore.api.MidnightCoreAPI;
+import org.wallentines.midnightcore.api.module.savepoint.Savepoint;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.CustomScoreboard;
 import org.wallentines.midnightcore.api.text.LangProvider;
 import org.wallentines.midnightcore.api.text.MComponent;
-import org.wallentines.midnightcore.common.module.session.AbstractSession;
+import org.wallentines.midnightcore.api.module.session.AbstractSession;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 
 
@@ -26,7 +26,7 @@ public class LobbySessionImpl extends AbstractSession implements LobbySession {
 
 
     public LobbySessionImpl(Lobby lobby) {
-        super(Constants.DEFAULT_NAMESPACE);
+        super(HideAndSeekAPI.DEFAULT_NAMESPACE, EnumSet.of(Savepoint.SaveFlag.GAME_MODE, Savepoint.SaveFlag.LOCATION, Savepoint.SaveFlag.DATA_TAG));
         this.lobby = lobby;
     }
 
@@ -139,7 +139,11 @@ public class LobbySessionImpl extends AbstractSession implements LobbySession {
     }
 
     private CustomScoreboard getPlayerScoreboard(MPlayer mpl) {
-        return scoreboards.computeIfAbsent(mpl, k -> MidnightCoreAPI.getInstance().createScoreboard(CustomScoreboard.generateRandomId(), lobby.getScoreboardTemplate().getTitle(mpl, HideAndSeekAPI.getInstance().getLangProvider(), this, lobby)));
+        return scoreboards.computeIfAbsent(mpl, k ->
+                mpl.getServer().getMidnightCore().createScoreboard(
+                        CustomScoreboard.generateRandomId(),
+                        lobby.getScoreboardTemplate().getTitle(mpl, HideAndSeekAPI.getInstance().getLangProvider(), this, lobby)
+                ));
     }
 
     private void onPlayerCountChanged() {

@@ -1,12 +1,12 @@
 package org.wallentines.hideandseek.common.integration;
 
 import org.wallentines.hideandseek.api.game.map.Map;
+import org.wallentines.mdcfg.ConfigObject;
+import org.wallentines.mdcfg.codec.FileWrapper;
+import org.wallentines.midnightcore.api.FileConfig;
 import org.wallentines.midnightcore.api.MidnightCoreAPI;
-import org.wallentines.midnightcore.common.util.Util;
-import org.wallentines.midnightessentials.api.module.blockcommand.BlockCommandModule;
-import org.wallentines.midnightessentials.api.module.blockcommand.BlockCommandRegistry;
-import org.wallentines.midnightlib.config.ConfigSection;
-import org.wallentines.midnightlib.config.FileConfig;
+import org.wallentines.messentials.module.BlockCommandModule;
+import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.midnightlib.registry.Identifier;
 
 import java.io.File;
@@ -18,15 +18,15 @@ public class MidnightEssentialsIntegration {
         try {
             File dataFolder = m.getDataFolder();
 
-            FileConfig conf = FileConfig.findFile(dataFolder.listFiles(), "block_commands");
+            FileWrapper<ConfigObject> conf = FileConfig.find("block_commands", dataFolder);
             if (conf == null) return;
 
             BlockCommandModule mod = MidnightCoreAPI.getModule(BlockCommandModule.class);
             if (mod != null) {
 
-                BlockCommandRegistry reg = mod.createRegistry(activeWorld.toString());
+                BlockCommandModule.Registry reg = mod.createRegistry(activeWorld.toString());
                 reg.setActiveWorld(activeWorld);
-                reg.loadFromConfig(conf.getRoot());
+                reg.loadFromConfig(conf.getRoot().asSection());
 
             }
 
@@ -51,7 +51,7 @@ public class MidnightEssentialsIntegration {
         BlockCommandModule mod = MidnightCoreAPI.getModule(BlockCommandModule.class);
         if (mod == null) return;
 
-        BlockCommandRegistry reg = mod.getRegistry(id.toString());
+        BlockCommandModule.Registry reg = mod.getRegistry(id.toString());
         if(reg == null) return;
 
         FileConfig conf = FileConfig.findOrCreate("block_commands", dataFolder);

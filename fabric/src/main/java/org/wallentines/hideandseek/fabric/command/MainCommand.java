@@ -18,10 +18,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import org.wallentines.hideandseek.api.HideAndSeekAPI;
 import org.wallentines.hideandseek.api.core.SessionManager;
+import org.wallentines.hideandseek.api.game.EditingSession;
 import org.wallentines.hideandseek.api.game.Lobby;
 import org.wallentines.hideandseek.api.game.LobbySession;
-import org.wallentines.hideandseek.api.game.map.Map;
-import org.wallentines.hideandseek.api.game.map.Role;
+import org.wallentines.hideandseek.api.game.map.*;
 import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.hideandseek.common.core.ContentRegistryImpl;
 import org.wallentines.hideandseek.common.game.BuiltinRoles;
@@ -29,6 +29,7 @@ import org.wallentines.hideandseek.common.game.UIDisplayImpl;
 import org.wallentines.hideandseek.common.game.map.*;
 import org.wallentines.hideandseek.common.integration.IntegrationManager;
 import org.wallentines.hideandseek.common.integration.Requirements;
+import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.midnightcore.api.module.session.Session;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.CustomPlaceholder;
@@ -36,7 +37,7 @@ import org.wallentines.midnightcore.api.text.CustomPlaceholderInline;
 import org.wallentines.midnightcore.fabric.player.FabricPlayer;
 import org.wallentines.midnightcore.fabric.util.CommandUtil;
 import org.wallentines.midnightcore.fabric.util.ConversionUtil;
-import org.wallentines.midnightlib.config.FileConfig;
+import org.wallentines.midnightcore.api.FileConfig;
 import org.wallentines.midnightlib.math.Vec3d;
 import org.wallentines.midnightlib.registry.Identifier;
 
@@ -267,7 +268,7 @@ public class MainCommand {
         Session sess;
         if (edit) {
             sess = HideAndSeekAPI.getInstance().getSessionManager().getEditingSession(map);
-            if (sess == null) sess = HideAndSeekAPI.getInstance().getSessionManager().createEditingSession(map);
+            if (sess == null) sess = HideAndSeekAPI.getInstance().getSessionManager().createEditingSession(map, false);
         } else {
             sess = HideAndSeekAPI.getInstance().getSessionManager().getViewingSession(map);
             if (sess == null) sess = HideAndSeekAPI.getInstance().getSessionManager().createViewingSession(map);
@@ -321,7 +322,7 @@ public class MainCommand {
         MapImpl m = new MapImpl(id, f, meta, display, world, game, null, null);
 
         FileConfig mapConf = FileConfig.findOrCreate("map", f);
-        mapConf.setRoot(MapImpl.createSerializer(f).serialize(m));
+        mapConf.setRoot(MapImpl.createSerializer(f).serialize(ConfigContext.INSTANCE, m).getOrThrow());
         mapConf.save();
 
         File worldFolder = m.getWorldFolder();
@@ -332,10 +333,17 @@ public class MainCommand {
         }
 
         HideAndSeekAPI.getInstance().getContentRegistry().registerMap(m);
-
         CommandUtil.sendCommandSuccess(context, HideAndSeekAPI.getInstance().getLangProvider(), false, "command.map.created", CustomPlaceholderInline.create("id", id));
 
-        return 1;
+        EditingSession sess = HideAndSeekAPI.getInstance().getSessionManager().createEditingSession(m, true);
+        if(sess == null) {
+            CommandUtil.sendCommandFailure(context, HideAndSeekAPI.getInstance().getLangProvider(), "command.error.session_failed", false);
+            return 1;
+        }
+
+        CommandUtil.sendCommandSuccess(context, HideAndSeekAPI.getInstance().getLangProvider(), false, "command.map.loading");
+        sess.addPlayer(fp);
+        return 2;
     }
 
     private static int settingsDescriptionCommand(CommandContext<CommandSourceStack> context, Map map, String description) {

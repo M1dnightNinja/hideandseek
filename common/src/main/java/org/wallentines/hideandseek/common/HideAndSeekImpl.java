@@ -7,15 +7,16 @@ import org.wallentines.hideandseek.api.game.timer.GameTimer;
 import org.wallentines.hideandseek.api.game.map.PlayerClass;
 import org.wallentines.hideandseek.common.game.timer.AbstractTimer;
 import org.wallentines.hideandseek.common.core.ContentRegistryImpl;
+import org.wallentines.midnightcore.api.FileConfig;
 import org.wallentines.midnightcore.api.MidnightCoreAPI;
 import org.wallentines.midnightcore.api.module.session.SessionModule;
 import org.wallentines.midnightcore.api.player.MPlayer;
+import org.wallentines.midnightcore.api.server.MServer;
 import org.wallentines.midnightcore.api.text.LangProvider;
 import org.wallentines.midnightcore.api.text.MComponent;
 import org.wallentines.midnightcore.api.text.PlaceholderManager;
 import org.wallentines.midnightcore.common.util.FileUtil;
-import org.wallentines.midnightlib.config.ConfigSection;
-import org.wallentines.midnightlib.config.FileConfig;
+import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.hideandseek.api.HideAndSeekAPI;
 
 import java.io.File;
@@ -55,9 +56,6 @@ public class HideAndSeekImpl extends HideAndSeekAPI {
         this.timerCreator = timerCreator;
         this.serverPack = serverPack;
         this.config = FileConfig.findOrCreate("config", this.dataFolder, Constants.CONFIG_DEFAULTS);
-        if(this.config == null) {
-            throw new IllegalStateException("Unable to create config!");
-        }
         this.config.save();
 
         Constants.registerDefaults();
@@ -123,12 +121,15 @@ public class HideAndSeekImpl extends HideAndSeekAPI {
 
     private void shutdown() {
 
-        SessionModule mod = MidnightCoreAPI.getModule(SessionModule.class);
+        MServer server = MidnightCoreAPI.getRunningServer();
+        if(server != null) {
 
-        if(mod != null) {
-            mod.shutdownAll(sess -> sess.getNamespace().equals(Constants.DEFAULT_NAMESPACE));
+            SessionModule mod = server.getModule(SessionModule.class);
+
+            if (mod != null) {
+                mod.shutdownAll(sess -> sess.getNamespace().equals(HideAndSeekAPI.DEFAULT_NAMESPACE));
+            }
         }
-
     }
 
     @Override

@@ -7,15 +7,14 @@ import org.wallentines.hideandseek.api.game.UIDisplay;
 import org.wallentines.hideandseek.api.game.map.Map;
 import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.hideandseek.common.core.ContentRegistryImpl;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightcore.api.player.Location;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.MTextComponent;
 import org.wallentines.midnightcore.api.text.PlaceholderManager;
 import org.wallentines.midnightcore.api.text.PlaceholderSupplier;
-import org.wallentines.midnightcore.api.text.TextColor;
-import org.wallentines.midnightcore.common.module.session.AbstractSession;
-import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
-import org.wallentines.midnightlib.config.serialization.PrimitiveSerializers;
+import org.wallentines.midnightcore.api.module.session.AbstractSession;
 import org.wallentines.midnightlib.math.Color;
 
 import java.util.ArrayList;
@@ -118,7 +117,7 @@ public class LobbyImpl implements Lobby {
 
     private static LobbyImpl make(String id, Location location, GameType gameType, UIDisplayImpl display, int minPlayers, int maxPlayers, Collection<Map> maps, String permission, ScoreboardTemplateImpl template) {
 
-        if(display == null) display = new UIDisplayImpl(new MTextComponent(id), new ArrayList<>(), new TextColor(Color.WHITE), null);
+        if(display == null) display = new UIDisplayImpl(new MTextComponent(id), new ArrayList<>(), Color.WHITE, null);
         LobbyImpl impl = new LobbyImpl(id, location, gameType, display, template);
 
         impl.setMinPlayers(minPlayers);
@@ -129,15 +128,15 @@ public class LobbyImpl implements Lobby {
         return impl;
     }
 
-    public static final ConfigSerializer<LobbyImpl> SERIALIZER = ConfigSerializer.create(
-            PrimitiveSerializers.STRING.entry("id", LobbyImpl::getId),
+    public static final Serializer<LobbyImpl> SERIALIZER = ObjectSerializer.create(
+            Serializer.STRING.entry("id", LobbyImpl::getId),
             Location.SERIALIZER.entry("location", LobbyImpl::getLocation),
             ContentRegistryImpl.REGISTERED_GAME_TYPE.entry("game_type", lobby -> lobby.gameType),
             UIDisplayImpl.SERIALIZER.<LobbyImpl>entry("display", lobby -> lobby.display).optional(),
-            PrimitiveSerializers.INT.entry("min_players", LobbyImpl::getMinPlayers).orDefault(2),
-            PrimitiveSerializers.INT.entry("max_players", LobbyImpl::getMaxPlayers).orDefault(16),
-            ContentRegistryImpl.REGISTERED_MAP.listOf().entry("maps", l -> l.maps),
-            PrimitiveSerializers.STRING.<LobbyImpl>entry("permission", lobby -> lobby.permission).optional(),
+            Serializer.INT.entry("min_players", LobbyImpl::getMinPlayers).orElse(2),
+            Serializer.INT.entry("max_players", LobbyImpl::getMaxPlayers).orElse(16),
+            ContentRegistryImpl.REGISTERED_MAP.filteredListOf().entry("maps", l -> l.maps),
+            Serializer.STRING.<LobbyImpl>entry("permission", lobby -> lobby.permission).optional(),
             ScoreboardTemplateImpl.SERIALIZER.<LobbyImpl>entry("scoreboard", lobby -> lobby.scoreboardTemplate).optional(),
             LobbyImpl::make
     );
@@ -149,7 +148,6 @@ public class LobbyImpl implements Lobby {
 
         Constants.registerInlinePlaceholder(manager, "lobby_id", PlaceholderSupplier.create(LobbyImpl.class, LobbyImpl::getId));
         Constants.registerInlinePlaceholder(manager, "lobby_color", PlaceholderSupplier.create(LobbyImpl.class, l -> l.getDisplay().getColor().toHex()));
-        Constants.registerInlinePlaceholder(manager, "lobby_location", PlaceholderSupplier.create(LobbyImpl.class, l -> Location.SERIALIZER.serialize(l.getLocation())));
         Constants.registerInlinePlaceholder(manager, "lobby_game_type_id", PlaceholderSupplier.create(LobbyImpl.class, l -> l.getGameType().getId().toString()));
         Constants.registerInlinePlaceholder(manager, "lobby_min_players", PlaceholderSupplier.create(LobbyImpl.class, l -> Objects.toString(l.getMinPlayers())));
         Constants.registerInlinePlaceholder(manager, "lobby_max_players", PlaceholderSupplier.create(LobbyImpl.class, l -> Objects.toString(l.getMaxPlayers())));

@@ -1,9 +1,9 @@
 package org.wallentines.hideandseek.common.game.map;
 
 import org.wallentines.hideandseek.api.game.map.MapMeta;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightcore.api.player.MPlayer;
-import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
-import org.wallentines.midnightlib.config.serialization.PrimitiveSerializers;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,12 +39,12 @@ public class MapMetaImpl implements MapMeta {
         return player.getUUID().equals(author) || editors.contains(player.getUUID());
     }
 
-    public static final ConfigSerializer<MapMetaImpl> SERIALIZER = ConfigSerializer.create(
-            PrimitiveSerializers.UUID.entry("author", MapMetaImpl::getAuthor).orDefault(new UUID(0L, 0L)),
-            PrimitiveSerializers.UUID.listOf().entry("editors", MapMetaImpl::getEditors).optional(),
+    public static final Serializer<MapMetaImpl> SERIALIZER = ObjectSerializer.create(
+            Serializer.UUID.entry("author", MapMetaImpl::getAuthor).orElse(new UUID(0L, 0L)),
+            Serializer.UUID.listOf().entry("editors", MapMetaImpl::getEditors).optional(),
             (author, editors) -> {
                 MapMetaImpl out = new MapMetaImpl(author);
-                out.editors.addAll(editors);
+                if(editors != null) out.editors.addAll(editors);
                 return out;
             }
     );

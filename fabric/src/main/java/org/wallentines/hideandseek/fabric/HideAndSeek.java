@@ -1,7 +1,7 @@
 package org.wallentines.hideandseek.fabric;
 
 import net.fabricmc.api.ModInitializer;
-import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
@@ -16,6 +16,7 @@ import org.wallentines.hideandseek.fabric.command.MainCommand;
 import org.wallentines.hideandseek.fabric.core.FabricSessionManager;
 import org.wallentines.hideandseek.fabric.game.FabricTimer;
 import org.wallentines.hideandseek.fabric.listener.GameListener;
+import org.wallentines.mdcfg.codec.JSONCodec;
 import org.wallentines.midnightcore.api.item.MItemStack;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.fabric.event.server.CommandLoadEvent;
@@ -23,8 +24,7 @@ import org.wallentines.midnightcore.fabric.event.server.ServerStartEvent;
 import org.wallentines.midnightcore.fabric.item.FabricItem;
 import org.wallentines.midnightcore.fabric.player.FabricPlayer;
 import org.wallentines.midnightcore.fabric.util.ConversionUtil;
-import org.wallentines.midnightlib.config.ConfigSection;
-import org.wallentines.midnightlib.config.serialization.json.JsonConfigProvider;
+import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.midnightlib.event.Event;
 import org.wallentines.midnightlib.registry.Identifier;
 
@@ -38,7 +38,6 @@ public class HideAndSeek implements ModInitializer {
 
     @Override
     public void onInitialize() {
-
 
         // Determine the data folder
         Path dataFolder = Paths.get("config/HideAndSeek");
@@ -56,7 +55,7 @@ public class HideAndSeek implements ModInitializer {
             }
         });
 
-        ConfigSection langDefaults = JsonConfigProvider.INSTANCE.loadFromStream(getClass().getResourceAsStream("/hideandseek/lang/en_us.json"));
+        ConfigSection langDefaults = JSONCodec.loadConfig(getClass().getResourceAsStream("/hideandseek/lang/en_us.json")).asSection();
         api.loadContents(langDefaults);
 
         GameListener.register();
@@ -88,7 +87,7 @@ public class HideAndSeek implements ModInitializer {
         for(Identifier effect : clazz.getEffects()) {
 
             int lvl = clazz.getEffectLevel(effect);
-            MobEffect eff = Registry.MOB_EFFECT.get(ConversionUtil.toResourceLocation(effect));
+            MobEffect eff = BuiltInRegistries.MOB_EFFECT.get(ConversionUtil.toResourceLocation(effect));
             if(eff == null) continue;
 
             spl.addEffect(new MobEffectInstance(eff, Integer.MAX_VALUE, lvl, true, false, true));

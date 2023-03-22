@@ -15,8 +15,8 @@ public class FabricSessionManager extends AbstractSessionManager {
     }
 
     @Override
-    public EditingSession createEditingSession(Map map) {
-        EditingSession sess = new FabricEditSession(map);
+    public EditingSession createEditingSession(Map map, boolean init) {
+        EditingSession sess = new FabricEditSession(map, init);
         getModule().registerSession(sess);
         return sess;
     }

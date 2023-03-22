@@ -3,12 +3,10 @@ package org.wallentines.hideandseek.common.game.map;
 import org.wallentines.hideandseek.api.HideAndSeekAPI;
 import org.wallentines.hideandseek.api.game.map.*;
 import org.wallentines.hideandseek.api.game.timer.TimerOverride;
-import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.hideandseek.common.core.ContentRegistryImpl;
 import org.wallentines.hideandseek.common.game.timer.TimerOverrideImpl;
-import org.wallentines.midnightlib.config.serialization.ClassSerializer;
-import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
-import org.wallentines.midnightlib.config.serialization.PrimitiveSerializers;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightlib.registry.Identifier;
 
 import java.util.*;
@@ -94,7 +92,7 @@ public class GameDataImpl implements GameData {
 
     public void setRoleData(Role role, RoleDataImpl data) {
 
-        roleData.put(role, data);
+        roleData.put(role, data.inheritFrom(ContentRegistryImpl.INSTANCE.getDefaultData(role)));
     }
 
 
@@ -104,25 +102,26 @@ public class GameDataImpl implements GameData {
                                      Map<Role, RoleDataImpl> roles, Collection<String> startCommands) {
 
         GameDataImpl out = new GameDataImpl(packData, hideTimer, seekTimer);
-        out.regions.addAll(regions);
-        out.tagSources.addAll(tagSources);
-        out.resetSources.addAll(resetSources);
-        out.customDeathMessageKeys.putAll(deathMessages);
-        out.roleData.putAll(roles);
-        out.startCommands.addAll(startCommands);
+        roles.forEach(out::setRoleData);
+
+        if(regions != null) out.regions.addAll(regions);
+        if(tagSources != null) out.tagSources.addAll(tagSources);
+        if(resetSources != null) out.resetSources.addAll(resetSources);
+        if(deathMessages != null) out.customDeathMessageKeys.putAll(deathMessages);
+        if(startCommands != null) out.startCommands.addAll(startCommands);
         return out;
     }
 
-    public static final ConfigSerializer<GameDataImpl> SERIALIZER = ConfigSerializer.create(
-            ResourcePackDataImpl.SERIALIZER.<GameDataImpl>entry("resource_pack", gd -> gd.resourcePack).orDefault(ResourcePackDataImpl.DEFAULT),
-            ClassSerializer.of(MapRegion.class).listOf().entry("regions", GameDataImpl::getRegions).optional(),
-            Constants.ID_SERIALIZER.listOf().<GameDataImpl>entry("tag_sources", gd -> gd.tagSources).optional(),
-            Constants.ID_SERIALIZER.listOf().<GameDataImpl>entry("reset_sources", gd -> gd.resetSources).optional(),
+    public static final Serializer<GameDataImpl> SERIALIZER = ObjectSerializer.create(
+            ResourcePackDataImpl.SERIALIZER.<GameDataImpl>entry("resource_pack", gd -> gd.resourcePack).orElse(ResourcePackDataImpl.DEFAULT),
+            MapRegionImpl.SERIALIZER.listOf().entry("regions", GameDataImpl::getRegions).optional(),
+            Identifier.serializer(HideAndSeekAPI.DEFAULT_NAMESPACE).listOf().<GameDataImpl>entry("tag_sources", gd -> gd.tagSources).optional(),
+            Identifier.serializer(HideAndSeekAPI.DEFAULT_NAMESPACE).listOf().<GameDataImpl>entry("reset_sources", gd -> gd.resetSources).optional(),
             TimerData.SERIALIZER.entry("hide_timer", gd -> gd.hideTimer),
             TimerData.SERIALIZER.entry("seek_timer", gd -> gd.seekTimer),
-            PrimitiveSerializers.STRING.mapOf().<GameDataImpl>entry("death_messages", gd -> gd.customDeathMessageKeys).optional(),
+            Serializer.STRING.mapOf().<GameDataImpl>entry("death_messages", gd -> gd.customDeathMessageKeys).optional(),
             RoleDataImpl.SERIALIZER.mapOf(ContentRegistryImpl.REGISTERED_ROLE).entry("roles", gd -> gd.roleData),
-            PrimitiveSerializers.STRING.listOf().entry("start_commands", GameDataImpl::getStartCommands).optional(),
+            Serializer.STRING.listOf().entry("start_commands", GameDataImpl::getStartCommands).optional(),
             GameDataImpl::make
     );
 
@@ -144,18 +143,12 @@ public class GameDataImpl implements GameData {
             return overrides;
         }
 
-        private static final ConfigSerializer<TimerData> SERIALIZER = ConfigSerializer.create(
-            PrimitiveSerializers.INT.entry("time", TimerData::getTime),
-            ConfigSerializer.<TimerOverrideImpl, TimerData>listEntry(TimerOverrideImpl.SERIALIZER, "overrides", td -> {
-                List<TimerOverrideImpl> out = new ArrayList<>();
-                for(TimerOverride override : td.getOverrides()) {
-                    out.add((TimerOverrideImpl) override);
-                }
-                return out;
-            }).optional(),
+        private static final Serializer<TimerData> SERIALIZER = ObjectSerializer.create(
+            Serializer.INT.entry("time", TimerData::getTime),
+            TimerOverrideImpl.SERIALIZER.listOf().entry("overrides", TimerData::getOverrides).optional(),
             (time, overrides) -> {
                 TimerData out = new TimerData(time);
-                out.overrides.addAll(overrides);
+                if(overrides != null) out.overrides.addAll(overrides);
                 return out;
             }
         );

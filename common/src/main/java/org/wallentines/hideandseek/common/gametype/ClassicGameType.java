@@ -3,7 +3,6 @@ package org.wallentines.hideandseek.common.gametype;
 import org.wallentines.hideandseek.api.HideAndSeekAPI;
 import org.wallentines.hideandseek.api.game.*;
 import org.wallentines.hideandseek.api.game.map.Role;
-import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.hideandseek.common.game.BuiltinRoles;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.*;
@@ -15,7 +14,7 @@ import java.util.HashMap;
 
 public class ClassicGameType implements GameType {
 
-    private static final Identifier ID = new Identifier(Constants.DEFAULT_NAMESPACE, "classic");
+    private static final Identifier ID = new Identifier(HideAndSeekAPI.DEFAULT_NAMESPACE, "classic");
 
     private static final HashMap<GameSession, MComponent> HIDE_TIMERS = new HashMap<>();
     private static final HashMap<GameSession, HashMap<Role, MComponent>> SEEK_TIMERS = new HashMap<>();

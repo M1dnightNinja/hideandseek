@@ -1,14 +1,14 @@
 package org.wallentines.hideandseek.api.game.map;
 
 import org.wallentines.midnightcore.api.text.MComponent;
-import org.wallentines.midnightcore.api.text.TextColor;
+import org.wallentines.midnightlib.math.Color;
 import org.wallentines.midnightlib.math.Vec3d;
 
 import java.util.Collection;
 
 public interface RoleData {
 
-    TextColor getColor();
+    Color getColor();
 
     MComponent getName();
 

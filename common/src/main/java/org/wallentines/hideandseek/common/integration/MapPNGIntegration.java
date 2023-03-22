@@ -1,9 +1,9 @@
 package org.wallentines.hideandseek.common.integration;
 
+import org.wallentines.hideandseek.api.HideAndSeekAPI;
 import org.wallentines.hideandseek.api.game.map.Map;
 import org.wallentines.mappng.MapPNGExtension;
 import org.wallentines.midnightcore.api.MidnightCoreAPI;
-import org.wallentines.midnightcore.api.module.extension.ExtensionModule;
 import org.wallentines.midnightcore.api.module.extension.ServerExtensionModule;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightlib.registry.Identifier;
@@ -19,43 +19,63 @@ public class MapPNGIntegration {
 
     public static void loadMapsForWorld(Map m, Identifier worldId) {
 
-        ExtensionModule mod = MidnightCoreAPI.getModule(ExtensionModule.class);
-        if(mod == null) return;
+        try {
 
-        MapPNGExtension ext = mod.getExtension(MapPNGExtension.class);
-        if(ext == null) return;
+            ServerExtensionModule mod = MidnightCoreAPI.getModule(ServerExtensionModule.class);
+            if (mod == null) {
+                return;
+            }
 
-        File dataDir = m.getDataFolder();
-        File dir = dataDir.toPath().resolve("maps").toFile();
+            MapPNGExtension ext = mod.getExtension(MapPNGExtension.class);
+            if (ext == null) {
+                return;
+            }
 
-        if(!dir.isDirectory()) return;
+            File dataDir = m.getDataFolder();
+            File dir = dataDir.toPath().resolve("maps").toFile();
 
-        File[] files = dir.listFiles();
-        if(files != null) for(File f : files) {
+            if (!dir.isDirectory()) {
+                return;
+            }
 
-            if(!f.isFile()) continue;
+            int loaded = 0;
+            File[] files = dir.listFiles();
 
-            Matcher matcher = PATTERN.matcher(f.getName());
-            if(!matcher.matches()) continue;
+            if (files != null) for (File f : files) {
 
-            String id = matcher.group(1);
-            int index = Integer.parseInt(id);
+                if (!f.isFile()) continue;
 
-            ext.loadImage(worldId, index, f);
+                try {
+                    Matcher matcher = PATTERN.matcher(f.getName());
+                    if (!matcher.matches()) continue;
+
+                    String id = matcher.group(1);
+                    int index = Integer.parseInt(id);
+
+                    ext.loadImage(worldId, index, f);
+                    loaded++;
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            HideAndSeekAPI.getLogger().info("Loaded " + loaded + " PNG maps for map " + m.getId());
+        } catch (Throwable th) {
+            th.printStackTrace();
         }
     }
 
     public static int playersWithExtension(Collection<MPlayer> players) {
 
-        ExtensionModule mod = MidnightCoreAPI.getModule(ExtensionModule.class);
-        if(mod == null || !mod.isClient()) return 0;
+        ServerExtensionModule mod = MidnightCoreAPI.getModule(ServerExtensionModule.class);
+        if(mod == null) return 0;
 
         MapPNGExtension ext = mod.getExtension(MapPNGExtension.class);
         if(ext == null) return 0;
 
         int out = 0;
         for(MPlayer mpl : players) {
-            if(((ServerExtensionModule) mod).playerHasExtension(mpl, MapPNGExtension.ID)) out++;
+            if(mod.playerHasExtension(mpl, MapPNGExtension.ID)) out++;
         }
 
         return out;

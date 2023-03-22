@@ -6,7 +6,7 @@ import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.MComponent;
 import org.wallentines.midnightcore.api.text.MStyle;
 import org.wallentines.midnightcore.api.text.MTextComponent;
-import org.wallentines.midnightcore.api.text.TextColor;
+import org.wallentines.midnightlib.math.Color;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -16,7 +16,7 @@ import java.util.function.Function;
 public abstract class AbstractTimer implements GameTimer {
 
     private static final Set<AbstractTimer> RUNNING_TIMERS = new HashSet<>();
-    private static final MStyle TIMER_STYLE = new MStyle().withColor(TextColor.WHITE).withBold(true);
+    private static final MStyle TIMER_STYLE = new MStyle().withColor(Color.WHITE).withBold(true);
 
     private final Function<MPlayer, MComponent> messageFunc;
     private final int time;

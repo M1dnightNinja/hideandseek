@@ -9,15 +9,15 @@ import org.wallentines.hideandseek.common.Constants;
 import org.wallentines.hideandseek.common.HideAndSeekImpl;
 import org.wallentines.hideandseek.common.core.ContentRegistryImpl;
 import org.wallentines.hideandseek.common.game.UIDisplayImpl;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightcore.api.item.MItemStack;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.MStyle;
 import org.wallentines.midnightcore.api.text.MTextComponent;
 import org.wallentines.midnightcore.api.text.PlaceholderManager;
 import org.wallentines.midnightcore.api.text.PlaceholderSupplier;
-import org.wallentines.midnightlib.config.ConfigSection;
-import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
-import org.wallentines.midnightlib.config.serialization.PrimitiveSerializers;
+import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.midnightlib.event.Event;
 import org.wallentines.midnightlib.math.Color;
 import org.wallentines.midnightlib.registry.Identifier;
@@ -107,24 +107,24 @@ public class PlayerClassImpl implements PlayerClass {
         return extraData;
     }
 
-    public static final ConfigSerializer<PlayerClassImpl> SERIALIZER = ConfigSerializer.create(
-            PrimitiveSerializers.STRING.entry("id", PlayerClassImpl::getId),
+    public static final Serializer<PlayerClassImpl> SERIALIZER = ObjectSerializer.create(
+            Serializer.STRING.entry("id", PlayerClassImpl::getId),
             UIDisplayImpl.SERIALIZER.<PlayerClassImpl>entry("display", cl -> cl.display).optional(),
             MItemStack.SERIALIZER.listOf().entry("items", PlayerClassImpl::getItems).optional(),
             MItemStack.SERIALIZER.mapOf().<PlayerClassImpl>entry("equipment", pc -> pc.equipment).optional(),
-            PrimitiveSerializers.INT.mapOf(Constants.ID_SERIALIZER).<PlayerClassImpl>entry("effects", cl -> cl.effects).optional(),
-            PrimitiveSerializers.STRING.mapOf(ContentRegistryImpl.REGISTERED_ROLE).<PlayerClassImpl>entry("equivalencies", cl -> cl.equivalencies).optional(),
-            PrimitiveSerializers.BOOLEAN.entry("tag_immune", PlayerClassImpl::isTagImmune).orDefault(false),
-            ConfigSerializer.RAW.entry("extra_data", PlayerClassImpl::getExtraData).orDefault(new ConfigSection()),
+            Serializer.INT.mapOf(Constants.ID_SERIALIZER).<PlayerClassImpl>entry("effects", cl -> cl.effects).optional(),
+            Serializer.STRING.mapOf(ContentRegistryImpl.REGISTERED_ROLE).<PlayerClassImpl>entry("equivalencies", cl -> cl.equivalencies).optional(),
+            Serializer.BOOLEAN.entry("tag_immune", PlayerClassImpl::isTagImmune).orElse(false),
+            ConfigSection.SERIALIZER.entry("extra_data", PlayerClassImpl::getExtraData).orElse(new ConfigSection()),
             (id, display, items, equipment, effects, equivalencies, tagImmune, extraData) -> {
 
                 if(display == null) display = UIDisplayImpl.createDefault(id);
                 PlayerClassImpl out = new PlayerClassImpl(id, display);
 
-                out.items.addAll(items);
-                out.equipment.putAll(equipment);
-                out.effects.putAll(effects);
-                out.equivalencies.putAll(equivalencies);
+                if(items != null) out.items.addAll(items);
+                if(equipment != null) out.equipment.putAll(equipment);
+                if(effects != null) out.effects.putAll(effects);
+                if(equivalencies != null) out.equivalencies.putAll(equivalencies);
                 out.tagImmune = tagImmune;
                 out.extraData = extraData;
 

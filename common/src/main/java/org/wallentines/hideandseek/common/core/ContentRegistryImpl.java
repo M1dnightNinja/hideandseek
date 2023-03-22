@@ -13,15 +13,15 @@ import org.wallentines.hideandseek.common.game.*;
 import org.wallentines.hideandseek.common.game.map.MapImpl;
 import org.wallentines.hideandseek.common.game.map.PlayerClassImpl;
 import org.wallentines.hideandseek.common.game.map.RoleDataImpl;
-import org.wallentines.midnightlib.config.ConfigSection;
-import org.wallentines.midnightlib.config.serialization.InlineSerializer;
+import org.wallentines.mdcfg.ConfigSection;
+import org.wallentines.mdcfg.serializer.ConfigContext;
+import org.wallentines.mdcfg.serializer.InlineSerializer;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
 import org.wallentines.midnightlib.registry.StringRegistry;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 
@@ -32,8 +32,8 @@ public class ContentRegistryImpl implements ContentRegistry {
     private final StringRegistry<Map> maps = new StringRegistry<>();
     private final StringRegistry<Lobby> lobbies = new StringRegistry<>();
     private final StringRegistry<PlayerClass> classes = new StringRegistry<>();
-    private final Registry<GameType> gameTypes = new Registry<>();
-    private final Registry<Role> roles = new Registry<>();
+    private final Registry<GameType> gameTypes = new Registry<>("hideandseek");
+    private final Registry<Role> roles = new Registry<>("hideandseek");
 
     private final HashMap<Role, RoleData> defaultRoleData = new HashMap<>();
 
@@ -118,26 +118,33 @@ public class ContentRegistryImpl implements ContentRegistry {
 
     @Override
     public Map getMap(String id) {
+        if(id == null) return null;
         return maps.get(id);
     }
 
     @Override
     public Lobby getLobby(String id) {
+        if(id == null) return null;
         return lobbies.get(id);
     }
 
     @Override
     public PlayerClass getGlobalClass(String id) {
+        if(id == null) return null;
         return classes.get(id);
     }
 
     @Override
     public GameType getGameType(Identifier id) {
+        if(id == null) return null;
         return gameTypes.get(id);
     }
 
     @Override
-    public Role getRole(Identifier id) { return roles.get(id); }
+    public Role getRole(Identifier id) {
+        if(id == null) return null;
+        return roles.get(id);
+    }
 
     @Override
     public StringRegistry<Map> getMaps() {
@@ -203,10 +210,10 @@ public class ContentRegistryImpl implements ContentRegistry {
 
     public void loadLobbies(ConfigSection section) {
 
-        if(!section.has("lobbies", List.class)) return;
-        for(ConfigSection sec : section.getListFiltered("lobbies", ConfigSection.class)) {
+        if(!section.hasList("lobbies")) return;
+        for(ConfigSection sec : section.getListFiltered("lobbies", ConfigSection.SERIALIZER)) {
             try {
-                registerLobby(LobbyImpl.SERIALIZER.deserialize(sec));
+                registerLobby(LobbyImpl.SERIALIZER.deserialize(ConfigContext.INSTANCE, sec).getOrThrow());
             } catch (Exception ex) {
                 LOGGER.warn("An error occurred while parsing a lobby!");
                 ex.printStackTrace();
@@ -218,8 +225,8 @@ public class ContentRegistryImpl implements ContentRegistry {
 
     public void loadRoleData(ConfigSection section) {
         for(String key : section.getKeys()) {
-            Role role = getRole(Constants.ID_SERIALIZER.deserialize(key));
-            RoleDataImpl data = section.get(key, RoleDataImpl.class);
+            Role role = getRole(Constants.ID_SERIALIZER.readString(key));
+            RoleDataImpl data = section.get(key, RoleDataImpl.SERIALIZER);
             setDefaultData(role, data);
         }
     }
@@ -228,10 +235,10 @@ public class ContentRegistryImpl implements ContentRegistry {
 
     public void loadClasses(ConfigSection section) {
 
-        if(!section.has("classes", List.class)) return;
-        for(ConfigSection sec : section.getListFiltered("classes", ConfigSection.class)) {
+        if(!section.hasList("classes")) return;
+        for(ConfigSection sec : section.getListFiltered("classes", ConfigSection.SERIALIZER)) {
             try {
-                registerGlobalClass(PlayerClassImpl.SERIALIZER.deserialize(sec));
+                registerGlobalClass(PlayerClassImpl.SERIALIZER.deserialize(ConfigContext.INSTANCE, sec).getOrThrow());
             } catch (Exception ex) {
                 LOGGER.warn("An error occurred while parsing a global class!");
                 ex.printStackTrace();
@@ -247,7 +254,7 @@ public class ContentRegistryImpl implements ContentRegistry {
     public void loadPermissions(ConfigSection section) {
 
         for(String s : section.getKeys()) {
-            permissionCaches.put(s, section.get(s, PermissionCache.class));
+            permissionCaches.put(s, section.get(s, PermissionCache.SERIALIZER));
         }
     }
 
@@ -256,7 +263,7 @@ public class ContentRegistryImpl implements ContentRegistry {
     public static final InlineSerializer<Map> REGISTERED_MAP = InlineSerializer.of(Map::getId, INSTANCE::getMap);
     public static final InlineSerializer<Lobby> REGISTERED_LOBBY = InlineSerializer.of(Lobby::getId, INSTANCE::getLobby);
     public static final InlineSerializer<PlayerClass> REGISTERED_GLOBAL_CLASS = InlineSerializer.of(PlayerClass::getId, INSTANCE::getGlobalClass);
-    public static final InlineSerializer<GameType> REGISTERED_GAME_TYPE = InlineSerializer.of(gt -> gt.getId().toString(), id -> INSTANCE.getGameType(Constants.ID_SERIALIZER.deserialize(id)));
-    public static final InlineSerializer<Role> REGISTERED_ROLE = InlineSerializer.of(r -> r.getId().toString(), id -> INSTANCE.getRole(Constants.ID_SERIALIZER.deserialize(id)));
+    public static final InlineSerializer<GameType> REGISTERED_GAME_TYPE = InlineSerializer.of(gt -> gt.getId().toString(), id -> INSTANCE.getGameType(Constants.ID_SERIALIZER.readString(id)));
+    public static final InlineSerializer<Role> REGISTERED_ROLE = InlineSerializer.of(r -> r.getId().toString(), id -> INSTANCE.getRole(Constants.ID_SERIALIZER.readString(id)));
 
 }

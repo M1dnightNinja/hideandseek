@@ -1,11 +1,11 @@
 package org.wallentines.hideandseek.common.game.map;
 
 import org.wallentines.hideandseek.api.game.map.PregameData;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightcore.api.module.session.Session;
 import org.wallentines.midnightcore.api.player.Location;
 import org.wallentines.midnightcore.api.player.MPlayer;
-import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
-import org.wallentines.midnightlib.config.serialization.PrimitiveSerializers;
 import org.wallentines.midnightlib.math.Vec3d;
 import org.wallentines.midnightlib.registry.Identifier;
 
@@ -55,9 +55,9 @@ public class PregameDataImpl implements PregameData {
         }
     }
 
-    public static final ConfigSerializer<PregameDataImpl> SERIALIZER = ConfigSerializer.create(
+    public static final Serializer<PregameDataImpl> SERIALIZER = ObjectSerializer.create(
         Vec3d.SERIALIZER.entry("spawn_center", PregameDataImpl::getSpawnCenter),
-        PrimitiveSerializers.DOUBLE.entry("spawn_radius", PregameDataImpl::getSpawnRadius),
+        Serializer.DOUBLE.entry("spawn_radius", PregameDataImpl::getSpawnRadius),
         PregameDataImpl::new
     );
 

@@ -12,7 +12,6 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import org.wallentines.hideandseek.api.game.Lobby;
-import org.wallentines.hideandseek.api.game.map.Map;
 import org.wallentines.hideandseek.common.core.ContentRegistryImpl;
 import org.wallentines.midnightcore.fabric.player.FabricPlayer;
 
@@ -85,7 +84,7 @@ public class LobbyArgumentType implements ArgumentType<LobbyArgumentType.ParsedL
 
         String arg = ArgumentTypes.getSingleArg(reader);
 
-        Lobby l = ContentRegistryImpl.REGISTERED_LOBBY.deserialize(arg);
+        Lobby l = ContentRegistryImpl.REGISTERED_LOBBY.readString(arg);
         if(l == null) throw INVALID_MAP.createWithContext(reader);
 
         return new ParsedLobby(l, filter);

@@ -12,6 +12,8 @@ public interface MapRegion {
 
     boolean canEnter(Role role);
 
+    boolean isDenied(Role role);
+
     MComponent getDenyMessage(MPlayer player, RoleData data);
 
 }

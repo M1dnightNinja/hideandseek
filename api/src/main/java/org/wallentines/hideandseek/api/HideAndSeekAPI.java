@@ -10,7 +10,7 @@ import org.wallentines.hideandseek.api.game.timer.GameTimer;
 import org.wallentines.midnightcore.api.player.MPlayer;
 import org.wallentines.midnightcore.api.text.LangProvider;
 import org.wallentines.midnightcore.api.text.MComponent;
-import org.wallentines.midnightlib.config.ConfigSection;
+import org.wallentines.mdcfg.ConfigSection;
 
 import java.io.File;
 import java.util.function.Consumer;
@@ -20,6 +20,8 @@ public abstract class HideAndSeekAPI {
 
     protected static final Logger LOGGER = LogManager.getLogger("HideAndSeek");
     private static HideAndSeekAPI INSTANCE;
+
+    public static final String DEFAULT_NAMESPACE = "hideandseek";
 
     protected HideAndSeekAPI() {
         if(INSTANCE == null) INSTANCE = this;

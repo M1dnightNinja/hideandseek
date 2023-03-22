@@ -11,7 +11,7 @@ dependencies {
     compileOnly project(":api")
     compileOnly "org.wallentines.midnightcore:common:1.0-SNAPSHOT"
 
-    compileOnly "org.wallentines.midnightessentials:api:1.0-SNAPSHOT"
+    compileOnly "org.wallentines.messentials:api:1.0-SNAPSHOT"
     compileOnly 'org.wallentines.nativeui:api:1.0-SNAPSHOT'
     compileOnly 'org.wallentines.mappng:api:1.0-SNAPSHOT'
 

@@ -37,7 +37,12 @@ dependencies {
     modImplementation 'org.wallentines.midnightcore:fabric:1.0-SNAPSHOT'
 
     modImplementation 'org.wallentines.nativeui:fabric:1.0-SNAPSHOT'
+
+    modImplementation 'org.wallentines.mappng:api:1.0-SNAPSHOT'
+    modImplementation 'org.wallentines.mappng:common:1.0-SNAPSHOT'
     modImplementation 'org.wallentines.mappng:fabric:1.0-SNAPSHOT'
+
+    modImplementation('org.wallentines.dynamiclevelloader:fabric:1.0-SNAPSHOT')
 
     implementation project(':api')
     implementation project(':common')
